@@ -5,10 +5,23 @@
   
   <entry>
     <title></title>
+    <link href="/2022/06/14/raft%20%E7%AE%97%E6%B3%95/"/>
+    <url>/2022/06/14/raft%20%E7%AE%97%E6%B3%95/</url>
+    
+    <content type="html"><![CDATA[<p><strong><font size=5>前言</font></strong></p><hr>前段时间学习了CMU-15445的课程，也写完了project，了解了数据库内核的基本知识。这段时间在做TinyKV，刚好看了raft，细节很多，所以来总结下。<p>关于raft网上有很多资料：<br><a href="">raft论文</a><br><a href="">raft论文翻译</a><br><a href="">raft博客</a><br><a href="">etcd raft实现</a></p><p>所以，这里并不是对raft算法本身的细节记录，而是自己阅读、实现时的一些疑问和解答。</p>]]></content>
+    
+    
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title></title>
     <link href="/2022/06/14/%E5%8D%9A%E5%AE%A2%E6%90%AC%E5%AE%B6/"/>
     <url>/2022/06/14/%E5%8D%9A%E5%AE%A2%E6%90%AC%E5%AE%B6/</url>
     
-    <content type="html"><![CDATA[]]></content>
+    <content type="html"><![CDATA[<p>换了一个新博客，慢慢将以前的内容搬到这里。</p>]]></content>
     
     
     
