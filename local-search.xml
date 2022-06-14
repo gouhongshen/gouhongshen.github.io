@@ -4,24 +4,11 @@
   
   
   <entry>
-    <title></title>
-    <link href="/2022/06/14/raft%20%E7%AE%97%E6%B3%95/"/>
-    <url>/2022/06/14/raft%20%E7%AE%97%E6%B3%95/</url>
+    <title>raft 算法杂记</title>
+    <link href="/2022/06/14/raft-%E7%AE%97%E6%B3%95%E6%9D%82%E8%AE%B0/"/>
+    <url>/2022/06/14/raft-%E7%AE%97%E6%B3%95%E6%9D%82%E8%AE%B0/</url>
     
-    <content type="html"><![CDATA[<p><strong><font size=5>前言</font></strong></p><hr>前段时间学习了CMU-15445的课程，也写完了project，了解了数据库内核的基本知识。这段时间在做TinyKV，刚好看了raft，细节很多，所以来总结下。<p>关于raft网上有很多资料：<br><a href="">raft论文</a><br><a href="">raft论文翻译</a><br><a href="">raft博客</a><br><a href="">etcd raft实现</a></p><p>所以，这里并不是对raft算法本身的细节记录，而是自己阅读、实现时的一些疑问和解答。</p>]]></content>
-    
-    
-    
-  </entry>
-  
-  
-  
-  <entry>
-    <title></title>
-    <link href="/2022/06/14/%E5%8D%9A%E5%AE%A2%E6%90%AC%E5%AE%B6/"/>
-    <url>/2022/06/14/%E5%8D%9A%E5%AE%A2%E6%90%AC%E5%AE%B6/</url>
-    
-    <content type="html"><![CDATA[<p>换了一个新博客，慢慢将以前的内容搬到这里。</p>]]></content>
+    <content type="html"><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前段时间学习了CMU-15445的课程，也写完了project，了解了数据库内核的基本知识。这段时间在做TinyKV，刚好看了raft，细节很多，所以来总结下。</p><p>关于raft网上有很多资料：<br><a href="https://raft.github.io/raft.pdf">raft论文</a><br><a href="https://tanxinyu.work/raft/">raft博客</a><br><a href="https://www.codedump.info/post/20180922-etcd-raft/">etcd raft实现</a></p><p>所以，这里并不是对raft算法本身的细节记录，而是自己阅读、实现时的一些疑问和解答。</p><h2 id="Q1：raft算法解决了什么问题？"><a href="#Q1：raft算法解决了什么问题？" class="headerlink" title="Q1：raft算法解决了什么问题？"></a>Q1：raft算法解决了什么问题？</h2><p>raft是一个分布式共识协议（算法），其主要作用是让集群中的节点对某件事情达成一致，如客户端发起更新请求，为了保证多个节点的数据状态一致，就需要让该更新请求在所有节点上都应用成功，否则更新请求失败。raft算法可以看作一个黑匣子，当某个节点接收到客户端的请求后，首先将该请求交给raft模块，由raft模块负责节点间的协商，最后将结果返回给节点，节点再反馈客户端。如下图的复制状态机所示。<br><img src="/../../public/img/raft/replicated%20state%20machine.png"></p><p>图中的consensus module就相当于raft黑匣子，state machine可以理解为kv键值数据库。还需要注意两点：1）日志记录和协商同步进行；2）图中是分层的，表示多个客户端和集群节点。</p><h2 id="Q2：在实际实现中，整个分布式系统的流程如何？"><a href="#Q2：在实际实现中，整个分布式系统的流程如何？" class="headerlink" title="Q2：在实际实现中，整个分布式系统的流程如何？"></a>Q2：在实际实现中，整个分布式系统的流程如何？</h2><p>这个问题实际是关于</p><ol><li>集群节点如何与客户端交互？</li><li>集群节点如何与raft模块交互？</li><li>raft模块如何与其他raft模块交互？</li></ol><p>要解答这些问题，需要借助现有的成熟的工业系统，比如etcd、tikv等等，因为比较熟悉tinykv（和etcd类似），所以以它为例。</p>]]></content>
     
     
     
@@ -34,7 +21,7 @@
     <link href="/2022/06/13/hello-world/"/>
     <url>/2022/06/13/hello-world/</url>
     
-    <content type="html"><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p><h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p><h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p><h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p><h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>]]></content>
+    <content type="html"><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p><h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ hexo new <span class="hljs-string">&quot;My New Post&quot;</span><br></code></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p><h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ hexo server<br></code></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p><h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ hexo generate<br></code></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p><h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ hexo deploy<br></code></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>]]></content>
     
     
     
