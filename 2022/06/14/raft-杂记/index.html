@@ -13,22 +13,23 @@
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
   <meta name="theme-color" content="#2f4154">
-  <meta name="author" content="John Doe">
+  <meta name="author" content="gouhongshen">
   <meta name="keywords" content="">
   
     <meta name="description" content="前言前段时间学习了CMU-15445的课程，也写完了project，了解了数据库内核的基本知识。这段时间在做TinyKV，刚好看了raft，细节很多，所以来总结下。 关于raft网上有很多资料：raft论文raft博客etcd raft实现 所以，这里并不是对raft算法本身的细节记录，而是自己阅读、实现时的一些疑问和解答。 Q1：raft算法解决了什么问题？raft是一个分布式共识协议（算法），">
 <meta property="og:type" content="article">
 <meta property="og:title" content="raft 算法杂记">
-<meta property="og:url" content="http://example.com/2022/06/14/raft-%E7%AE%97%E6%B3%95%E6%9D%82%E8%AE%B0/index.html">
+<meta property="og:url" content="http://example.com/2022/06/14/raft-%E6%9D%82%E8%AE%B0/index.html">
 <meta property="og:site_name" content="Gou&#39;s Blog">
 <meta property="og:description" content="前言前段时间学习了CMU-15445的课程，也写完了project，了解了数据库内核的基本知识。这段时间在做TinyKV，刚好看了raft，细节很多，所以来总结下。 关于raft网上有很多资料：raft论文raft博客etcd raft实现 所以，这里并不是对raft算法本身的细节记录，而是自己阅读、实现时的一些疑问和解答。 Q1：raft算法解决了什么问题？raft是一个分布式共识协议（算法），">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="http://example.com/public/img/raft/replicated%20state%20machine.png">
+<meta property="og:image" content="http://example.com/img/raft/cover_page.png">
 <meta property="article:published_time" content="2022-06-14T11:31:45.000Z">
-<meta property="article:modified_time" content="2022-06-14T12:16:45.721Z">
-<meta property="article:author" content="John Doe">
+<meta property="article:modified_time" content="2022-06-15T13:18:39.363Z">
+<meta property="article:author" content="gouhongshen">
+<meta property="article:tag" content="raft，分布式一致性协议">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="http://example.com/public/img/raft/replicated%20state%20machine.png">
+<meta name="twitter:image" content="http://example.com/img/raft/cover_page.png">
   
   
   
@@ -218,7 +219,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          617 字
+          2.4k 字
         
       </span>
     
@@ -229,7 +230,7 @@
         
         
         
-          11 分钟
+          27 分钟
         
       </span>
     
@@ -274,7 +275,7 @@
               <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前段时间学习了CMU-15445的课程，也写完了project，了解了数据库内核的基本知识。这段时间在做TinyKV，刚好看了raft，细节很多，所以来总结下。</p>
 <p>关于raft网上有很多资料：<br><a target="_blank" rel="noopener" href="https://raft.github.io/raft.pdf">raft论文</a><br><a target="_blank" rel="noopener" href="https://tanxinyu.work/raft/">raft博客</a><br><a target="_blank" rel="noopener" href="https://www.codedump.info/post/20180922-etcd-raft/">etcd raft实现</a></p>
 <p>所以，这里并不是对raft算法本身的细节记录，而是自己阅读、实现时的一些疑问和解答。</p>
-<h2 id="Q1：raft算法解决了什么问题？"><a href="#Q1：raft算法解决了什么问题？" class="headerlink" title="Q1：raft算法解决了什么问题？"></a>Q1：raft算法解决了什么问题？</h2><p>raft是一个分布式共识协议（算法），其主要作用是让集群中的节点对某件事情达成一致，如客户端发起更新请求，为了保证多个节点的数据状态一致，就需要让该更新请求在所有节点上都应用成功，否则更新请求失败。raft算法可以看作一个黑匣子，当某个节点接收到客户端的请求后，首先将该请求交给raft模块，由raft模块负责节点间的协商，最后将结果返回给节点，节点再反馈客户端。如下图的复制状态机所示。<br><img src="/../../public/img/raft/replicated%20state%20machine.png" srcset="/img/loading.gif" lazyload></p>
+<h2 id="Q1：raft算法解决了什么问题？"><a href="#Q1：raft算法解决了什么问题？" class="headerlink" title="Q1：raft算法解决了什么问题？"></a>Q1：raft算法解决了什么问题？</h2><p>raft是一个分布式共识协议（算法），其主要作用是让集群中的节点对某件事情达成一致，如客户端发起更新请求，为了保证多个节点的数据状态一致，就需要让该更新请求在所有节点上都应用成功，否则更新请求失败。raft算法可以看作一个黑匣子，当某个节点接收到客户端的请求后，首先将该请求交给raft模块，由raft模块负责节点间的协商，最后将结果返回给节点，节点再反馈客户端。如下图的复制状态机所示。<br><img src="/.com//raft/rsm.png" srcset="/img/loading.gif" lazyload></p>
 <p>图中的consensus module就相当于raft黑匣子，state machine可以理解为kv键值数据库。还需要注意两点：1）日志记录和协商同步进行；2）图中是分层的，表示多个客户端和集群节点。</p>
 <h2 id="Q2：在实际实现中，整个分布式系统的流程如何？"><a href="#Q2：在实际实现中，整个分布式系统的流程如何？" class="headerlink" title="Q2：在实际实现中，整个分布式系统的流程如何？"></a>Q2：在实际实现中，整个分布式系统的流程如何？</h2><p>这个问题实际是关于</p>
 <ol>
@@ -282,7 +283,34 @@
 <li>集群节点如何与raft模块交互？</li>
 <li>raft模块如何与其他raft模块交互？</li>
 </ol>
-<p>要解答这些问题，需要借助现有的成熟的工业系统，比如etcd、tikv等等，因为比较熟悉tinykv（和etcd类似），所以以它为例。</p>
+<p>要解答这些问题，需要借助现有的成熟的工业系统，比如etcd、tikv等等，因为比较熟悉TinyKV，所以以它为例。</p>
+<p>TinyKV的设计参照了etcd，将raft模块设计成独立的部分，raft需要的网络、存储服务由上层（非raft)提供，比较具有灵活性，具体流程如下：</p>
+<ol>
+<li>客户端向节点发送请求（put&#x2F;get&#x2F;delete…)</li>
+<li>节点准备WAL(write-ahead-log)</li>
+<li>节点将请求封装成entry发送给raft模块</li>
+<li>节点获取raft算法的输出，主要有一下部分：<br> 1）raft需要存储的日志记录（unstable entry和一些raft自身状态信息）<br> 2）committed entry（已经在大多数节点间达成一致的entry）<br> 3）messages，需要发往其他raft模块的消息</li>
+<li>节点获取到raft的输出后，按其类型做一些操作，对于unstable entry和状态信息，执行持久化操作；对于committed entry，它们已处于安全状态，可以应用于数据库了，并且可以就这些entry中的请求向客户端反馈成功；对于messages，将其发送到对应的raft模块。完成以上操作后，通知raft模块。</li>
+</ol>
+<p><em>为什么raft会存储unstable entry和状态信息，比如peers，是为了从崩溃中恢复</em></p>
+<p><strong>总结一下</strong>，raft模块被独立实现，其算法输入来自上层（这里的输入可能是客户端请求，也可能是其他raft模块的消息），其算法输出由上层负责处理（存储、发送等），从这里也能知道，raft根本不关心entry中的具体请求，那是上层逻辑的责任，它只需要采取办法能够唯一标识一条entry即可（Term、Index）。</p>
+<h2 id="Q3：当网络分区发生时，raft算法有什么表现？"><a href="#Q3：当网络分区发生时，raft算法有什么表现？" class="headerlink" title="Q3：当网络分区发生时，raft算法有什么表现？"></a>Q3：当网络分区发生时，raft算法有什么表现？</h2><p>该问题比较大，需要分类讨论：</p>
+<ol>
+<li>单个follower节点被隔离，恢复后，会发生什么？</li>
+<li>网络分区发生时，leader处在少数部分，恢复后会发生什么？</li>
+<li>网络分区发生时，leader处在多数部分，恢复后会发生什么？</li>
+</ol>
+<p><font color="red">对于第一个问题</font>，先看被隔离节点的表现：因为是follower，它只能被动应答，在一段时间内没有异常发生。等到election_timeout后，它自增Term，发起选举请求，由于网络问题，其他节点接收不到该请求，然后再次等到election_timeout，再次自增Term，发起选举请求……它重复该操作，直到从隔离中恢复。</p>
+<p>该节点（记为A）从隔离中恢复后，可能会先收到leader发来的AppenEntriesRPC或者HeartBeatRPC，但leader.Term &lt; A.Term，根据算法，这些RPC对A没有影响，但leader会受到影响，leader会转变为follower。集群中先超时的节点会率先发起选举请求，由于存在选举限制：<strong>要获取到大多数的选票，就必须具有最新的日志记录（通过比较最后一份日志的Term和Index判断）</strong>，这样的选举可能会持续多次，但无论如何节点A都不可能当选leader，因为它被隔离，没有后面新追加的日志。也就是说，节点A的重新加入造成了系统不必要的抖动，其原因在于，节点A在隔离期间盲目地自增Term。</p>
+<p>etcd是如何解决该问题的呢？采用preVote机制，即当一个节点超时后，它并不急于自增Term，而是先发起选举请求，如果能获取到大多数的选票，再自增Term重新发起选举。</p>
+<br>
+<font color="red">对于第二个问题</font>，leader处在少数节点分区部分，根据raft要求，一条entry能被提交，该entry至少需要被 N/2 + 1安全复制，因此上层交付的任务proposal都无法被提交，自然无法被应用到数据库和反馈客户端，客户端会出现请求超时。后面的客户端请求可能会被路由到另外一个节点，直到请求能够被正常执行。
+
+<p>当网络分区恢复后，该leader会接受来自新leader的RPC请求，转换成follower，开始正常的日志复制。该种情况下，是否会出现第一个问题中的场景呢？是有可能的，比如四个节点，每个分区中存在两个节点，包含leader的分区不会触发新的选举，但另外一个分区会发起多次的选举（或预选举），<strong>这种情况下，整个系统瘫痪，无法对外服务</strong>。</p>
+<br>
+<font color="red">对于第三个问题</font>，这种情况相对较简单，系统可正常对外服务，少数分区可能存在多次选举，但分区恢复后，可以开始正常的日志复制，具体过程在前两个问题中已经提及。
+
+<h2 id="Q4：leader-commit日志之前崩溃了，会发生什么？"><a href="#Q4：leader-commit日志之前崩溃了，会发生什么？" class="headerlink" title="Q4：leader commit日志之前崩溃了，会发生什么？"></a>Q4：leader commit日志之前崩溃了，会发生什么？</h2><p>该问题在raft论文中有论述，是关于如何处理前任leader复制的日志。</p>
 
               
             </div>
@@ -290,6 +318,13 @@
             <div>
               <div class="post-metas my-3">
   
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/raft%EF%BC%8C%E5%88%86%E5%B8%83%E5%BC%8F%E4%B8%80%E8%87%B4%E6%80%A7%E5%8D%8F%E8%AE%AE/">#raft，分布式一致性协议</a>
+      
+    </div>
   
 </div>
 
@@ -300,13 +335,13 @@
   <div class="license-box my-3">
     <div class="license-title">
       <div>raft 算法杂记</div>
-      <div>http://example.com/2022/06/14/raft-算法杂记/</div>
+      <div>http://example.com/2022/06/14/raft-杂记/</div>
     </div>
     <div class="license-meta">
       
         <div class="license-meta-item">
           <div>作者</div>
-          <div>John Doe</div>
+          <div>gouhongshen</div>
         </div>
       
       
@@ -315,6 +350,11 @@
           <div>2022年6月14日</div>
         </div>
       
+      
+        <div class="license-meta-item license-meta-date">
+          <div>更新于</div>
+          <div>2022年6月15日</div>
+        </div>
       
       <div class="license-meta-item">
         <div>许可协议</div>
