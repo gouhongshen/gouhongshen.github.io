@@ -4,17 +4,25 @@
   
   
   <entry>
-    <title>raft 算法杂记</title>
-    <link href="/2022/06/14/raft-%E6%9D%82%E8%AE%B0/"/>
-    <url>/2022/06/14/raft-%E6%9D%82%E8%AE%B0/</url>
+    <title>记 CMU-15445 课程所得</title>
+    <link href="/2022/06/16/%E8%AE%B0-CMU-15445-%E8%AF%BE%E7%A8%8B%E6%89%80%E5%BE%97/"/>
+    <url>/2022/06/16/%E8%AE%B0-CMU-15445-%E8%AF%BE%E7%A8%8B%E6%89%80%E5%BE%97/</url>
     
-    <content type="html"><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前段时间学习了CMU-15445的课程，也写完了project，了解了数据库内核的基本知识。这段时间在做TinyKV，刚好看了raft，细节很多，所以来总结下。</p><p>关于raft网上有很多资料：<br><a href="https://raft.github.io/raft.pdf">raft论文</a><br><a href="https://tanxinyu.work/raft/">raft博客</a><br><a href="https://www.codedump.info/post/20180922-etcd-raft/">etcd raft实现</a></p><p>所以，这里并不是对raft算法本身的细节记录，而是自己阅读、实现时的一些疑问和解答。</p><h2 id="Q1：raft算法解决了什么问题？"><a href="#Q1：raft算法解决了什么问题？" class="headerlink" title="Q1：raft算法解决了什么问题？"></a>Q1：raft算法解决了什么问题？</h2><p>raft是一个分布式共识协议（算法），其主要作用是让集群中的节点对某件事情达成一致，如客户端发起更新请求，为了保证多个节点的数据状态一致，就需要让该更新请求在所有节点上都应用成功，否则更新请求失败。raft算法可以看作一个黑匣子，当某个节点接收到客户端的请求后，首先将该请求交给raft模块，由raft模块负责节点间的协商，最后将结果返回给节点，节点再反馈客户端。如下图的复制状态机所示。<br><img src="/.com//raft/rsm.png"></p><p>图中的consensus module就相当于raft黑匣子，state machine可以理解为kv键值数据库。还需要注意两点：1）日志记录和协商同步进行；2）图中是分层的，表示多个客户端和集群节点。</p><h2 id="Q2：在实际实现中，整个分布式系统的流程如何？"><a href="#Q2：在实际实现中，整个分布式系统的流程如何？" class="headerlink" title="Q2：在实际实现中，整个分布式系统的流程如何？"></a>Q2：在实际实现中，整个分布式系统的流程如何？</h2><p>这个问题实际是关于</p><ol><li>集群节点如何与客户端交互？</li><li>集群节点如何与raft模块交互？</li><li>raft模块如何与其他raft模块交互？</li></ol><p>要解答这些问题，需要借助现有的成熟的工业系统，比如etcd、tikv等等，因为比较熟悉TinyKV，所以以它为例。</p><p>TinyKV的设计参照了etcd，将raft模块设计成独立的部分，raft需要的网络、存储服务由上层（非raft)提供，比较具有灵活性，具体流程如下：</p><ol><li>客户端向节点发送请求（put&#x2F;get&#x2F;delete…)</li><li>节点准备WAL(write-ahead-log)</li><li>节点将请求封装成entry发送给raft模块</li><li>节点获取raft算法的输出，主要有一下部分：<br> 1）raft需要存储的日志记录（unstable entry和一些raft自身状态信息）<br> 2）committed entry（已经在大多数节点间达成一致的entry）<br> 3）messages，需要发往其他raft模块的消息</li><li>节点获取到raft的输出后，按其类型做一些操作，对于unstable entry和状态信息，执行持久化操作；对于committed entry，它们已处于安全状态，可以应用于数据库了，并且可以就这些entry中的请求向客户端反馈成功；对于messages，将其发送到对应的raft模块。完成以上操作后，通知raft模块。</li></ol><p><em>为什么raft会存储unstable entry和状态信息，比如peers，是为了从崩溃中恢复</em></p><p><strong>总结一下</strong>，raft模块被独立实现，其算法输入来自上层（这里的输入可能是客户端请求，也可能是其他raft模块的消息），其算法输出由上层负责处理（存储、发送等），从这里也能知道，raft根本不关心entry中的具体请求，那是上层逻辑的责任，它只需要采取办法能够唯一标识一条entry即可（Term、Index）。</p><h2 id="Q3：当网络分区发生时，raft算法有什么表现？"><a href="#Q3：当网络分区发生时，raft算法有什么表现？" class="headerlink" title="Q3：当网络分区发生时，raft算法有什么表现？"></a>Q3：当网络分区发生时，raft算法有什么表现？</h2><p>该问题比较大，需要分类讨论：</p><ol><li>单个follower节点被隔离，恢复后，会发生什么？</li><li>网络分区发生时，leader处在少数部分，恢复后会发生什么？</li><li>网络分区发生时，leader处在多数部分，恢复后会发生什么？</li></ol><p><font color="red">对于第一个问题</font>，先看被隔离节点的表现：因为是follower，它只能被动应答，在一段时间内没有异常发生。等到election_timeout后，它自增Term，发起选举请求，由于网络问题，其他节点接收不到该请求，然后再次等到election_timeout，再次自增Term，发起选举请求……它重复该操作，直到从隔离中恢复。</p><p>该节点（记为A）从隔离中恢复后，可能会先收到leader发来的AppenEntriesRPC或者HeartBeatRPC，但leader.Term &lt; A.Term，根据算法，这些RPC对A没有影响，但leader会受到影响，leader会转变为follower。集群中先超时的节点会率先发起选举请求，由于存在选举限制：<strong>要获取到大多数的选票，就必须具有最新的日志记录（通过比较最后一份日志的Term和Index判断）</strong>，这样的选举可能会持续多次，但无论如何节点A都不可能当选leader，因为它被隔离，没有后面新追加的日志。也就是说，节点A的重新加入造成了系统不必要的抖动，其原因在于，节点A在隔离期间盲目地自增Term。</p><p>etcd是如何解决该问题的呢？采用preVote机制，即当一个节点超时后，它并不急于自增Term，而是先发起选举请求，如果能获取到大多数的选票，再自增Term重新发起选举。</p><br><font color="red">对于第二个问题</font>，leader处在少数节点分区部分，根据raft要求，一条entry能被提交，该entry至少需要被 N/2 + 1安全复制，因此上层交付的任务proposal都无法被提交，自然无法被应用到数据库和反馈客户端，客户端会出现请求超时。后面的客户端请求可能会被路由到另外一个节点，直到请求能够被正常执行。<p>当网络分区恢复后，该leader会接受来自新leader的RPC请求，转换成follower，开始正常的日志复制。该种情况下，是否会出现第一个问题中的场景呢？是有可能的，比如四个节点，每个分区中存在两个节点，包含leader的分区不会触发新的选举，但另外一个分区会发起多次的选举（或预选举），<strong>这种情况下，整个系统瘫痪，无法对外服务</strong>。</p><br><font color="red">对于第三个问题</font>，这种情况相对较简单，系统可正常对外服务，少数分区可能存在多次选举，但分区恢复后，可以开始正常的日志复制，具体过程在前两个问题中已经提及。<h2 id="Q4：leader-commit日志之前崩溃了，会发生什么？"><a href="#Q4：leader-commit日志之前崩溃了，会发生什么？" class="headerlink" title="Q4：leader commit日志之前崩溃了，会发生什么？"></a>Q4：leader commit日志之前崩溃了，会发生什么？</h2><p>该问题在raft论文中有论述，是关于如何处理前任leader复制的日志。</p>]]></content>
+    <content type="html"><![CDATA[]]></content>
     
+    
+    <categories>
+      
+      <category>数据库</category>
+      
+    </categories>
     
     
     <tags>
       
-      <tag>raft，分布式一致性协议</tag>
+      <tag>CMU-15445</tag>
+      
+      <tag>关系型数据库</tag>
       
     </tags>
     
@@ -23,11 +31,65 @@
   
   
   <entry>
-    <title>Hello World</title>
-    <link href="/2022/06/13/hello-world/"/>
-    <url>/2022/06/13/hello-world/</url>
+    <title>TinyKV Snapshot 流程探秘</title>
+    <link href="/2022/06/16/TinyKV-Snapshot-%E6%B5%81%E7%A8%8B/"/>
+    <url>/2022/06/16/TinyKV-Snapshot-%E6%B5%81%E7%A8%8B/</url>
     
-    <content type="html"><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p><h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ hexo new <span class="hljs-string">&quot;My New Post&quot;</span><br></code></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p><h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ hexo server<br></code></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p><h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ hexo generate<br></code></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p><h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ hexo deploy<br></code></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>]]></content>
+    <content type="html"><![CDATA[]]></content>
+    
+    
+    <categories>
+      
+      <category>分布式</category>
+      
+      <category>数据库</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>TinyKV</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>Raft 算法杂记</title>
+    <link href="/2022/06/14/raft-%E6%9D%82%E8%AE%B0/"/>
+    <url>/2022/06/14/raft-%E6%9D%82%E8%AE%B0/</url>
+    
+    <content type="html"><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前段时间学习了 CMU-15445 的课程，也写完了 project，了解了数据库内核的基本知识。这段时间在做 TinyKV，刚好看了 raft，细节很多，所以来总结下。</p><p>关于 raft 网上有很多资料：<br><a href="https://raft.github.io/raft.pdf">raft 论文</a><br><a href="https://tanxinyu.work/raft/">raft 博客</a><br><a href="https://www.codedump.info/post/20180922-etcd-raft/">etcd raft 实现</a></p><p>所以，这里并不是对 raft 算法本身的细节记录，而是自己阅读、实现时的一些疑问和解答。</p><h2 id="Q1：raft算法解决了什么问题？"><a href="#Q1：raft算法解决了什么问题？" class="headerlink" title="Q1：raft算法解决了什么问题？"></a>Q1：raft算法解决了什么问题？</h2><p>raft 是一个分布式共识协议（算法），其主要作用是让集群中的节点对某件事情达成一致，如客户端发起更新请求，为了保证多个节点的数据状态一致，就需要让该更新请求在所有节点上都应用成功，否则更新请求失败。raft 算法可以看作一个黑匣子，当某个节点接收到客户端的请求后，首先将该请求交给 raft 模块，由 raft 模块负责节点间的协商，最后将结果返回给节点，节点再反馈客户端。如下图的复制状态机所示。</p><p><img src="/img/raft/rsm.png"></p><p>图中的 consensus module 就相当于 raft 黑匣子，state machine 可以理解为 kv 键值数据库。还需要注意两点：1）日志记录和协商同步进行；2）图中是分层的，表示多个客户端和集群节点。</p><h2 id="Q2：在实际实现中，整个分布式系统的流程如何？"><a href="#Q2：在实际实现中，整个分布式系统的流程如何？" class="headerlink" title="Q2：在实际实现中，整个分布式系统的流程如何？"></a>Q2：在实际实现中，整个分布式系统的流程如何？</h2><p>这个问题实际是关于</p><ol><li>集群节点如何与客户端交互？</li><li>集群节点如何与 raft 模块交互？</li><li>raft 模块如何与其他 raft 模块交互？</li></ol><p>要解答这些问题，需要借助现有的成熟的工业系统，比如 etcd、tikv 等等，因为比较熟悉 TinyKV，所以以它为例。</p><p>TinyKV 的设计参照了 etcd，将 raft 模块设计成独立的部分，raft 需要的网络、存储服务由上层（非 raft)提供，比较具有灵活性，具体流程如下：</p><ol><li>客户端向节点发送请求（put&#x2F;get&#x2F;delete…)</li><li>节点准备 WAL(write-ahead-log)</li><li>节点将请求封装成 entry 发送给 raft 模块</li><li>节点获取 raft 算法的输出，主要有一下部分：<br> 1）raft 需要存储的日志记录（unstable entry 和一些 raft 自身状态信息）<br> 2）committed entry（已经在大多数节点间达成一致的 entry）<br> 3）messages，需要发往其他 raft 模块的消息</li><li>节点获取到 raft 的输出后，按其类型做一些操作，对于 unstable entry 和状态信息，执行持久化操作；对于 committed entry，它们已处于安全状态，可以应用于数据库了，并且可以就这些 entry 中的请求向客户端反馈成功；对于messages，将其发送到对应的 raft 模块。完成以上操作后，通知 raft 模块。</li></ol><p><em>为什么 raft 会存储 unstable entry 和状态信息，比如 peers，是为了从崩溃中恢复</em></p><p><strong>总结一下</strong>，raft 模块被独立实现，其算法输入来自上层（这里的输入可能是客户端请求，也可能是其他 raft 模块的消息），其算法输出由上层负责处理（存储、发送等），从这里也能知道，raft 根本不关心 entry 中的具体请求，那是上层逻辑的责任，它只需要采取办法能够唯一标识一条 entry 即可（Term、Index）。</p><h2 id="Q3：当网络分区发生时，raft算法有什么表现？"><a href="#Q3：当网络分区发生时，raft算法有什么表现？" class="headerlink" title="Q3：当网络分区发生时，raft算法有什么表现？"></a>Q3：当网络分区发生时，raft算法有什么表现？</h2><p>该问题比较大，需要分类讨论：</p><ol><li>单个 follower 节点被隔离，恢复后，会发生什么？</li><li>网络分区发生时，leader 处在少数部分，恢复后会发生什么？</li><li>网络分区发生时，leader 处在多数部分，恢复后会发生什么？</li></ol><p><font color=red>对于第一个问题</font>，先看被隔离节点的表现：因为是 follower，它只能被动应答，在一段时间内没有异常发生。等到 election_timeout 后，它自增 Term，发起选举请求，由于网络问题，其他节点接收不到该请求，然后再次等到 election_timeout，再次自增 Term，发起选举请求……它重复该操作，直到从隔离中恢复。</p><p>该节点（记为 A）从隔离中恢复后，可能会先收到 leader 发来的 AppenEntriesRPC 或者 HeartBeatRPC，但 leader.Term &lt; A.Term，根据算法，这些 RPC 对 A 没有影响，但 leader 会受到影响，leader 会转变为 follower。集群中先超时的节点会率先发起选举请求，由于存在选举限制：<strong>要获取到大多数的选票，就必须具有最新的日志记录（通过比较最后一份日志的 Term 和 Index 判断）</strong>，这样的选举可能会持续多次，但无论如何节点 A 都不可能当选 leader，因为它被隔离，没有后面新追加的日志。也就是说，节点 A 的重新加入造成了系统不必要的抖动，其原因在于，节点 A 在隔离期间盲目地自增 Term。</p><p>etcd 是如何解决该问题的呢？采用 preVote 机制，即当一个节点超时后，它并不急于自增 Term，而是先发起选举请求，如果能获取到大多数的选票，再自增 Term 重新发起选举。</p><br><font color=red>对于第二个问题</font>，leader 处在少数节点分区部分，根据 raft 要求，一条 entry 能被提交，该entry 至少需要被 N/2 + 1 个节点安全复制，因此上层交付的任务 proposal 都无法被提交，自然无法被应用到数据库和反馈客户端，客户端会出现请求超时。后面的客户端请求可能会被路由到另外一个节点，直到请求能够被正常执行。<p>当网络分区恢复后，该 leader 会接受来自新 leader 的 RPC 请求，转换成 follower，开始正常的日志复制。该种情况下，是否会出现第一个问题中的场景呢？是有可能的，比如四个节点，每个分区中存在两个节点，包含 leader 的分区不会触发新的选举，但另外一个分区会发起多次的选举（或预选举），<strong>这种情况下，整个系统瘫痪，无法对外服务</strong>。</p><br><font color=red>对于第三个问题</font>，这种情况相对较简单，系统可正常对外服务，少数分区可能存在多次选举，但分区恢复后，可以开始正常的日志复制，具体过程在前两个问题中已经提及。<h2 id="Q4：leader-commit日志之前崩溃了，会发生什么？"><a href="#Q4：leader-commit日志之前崩溃了，会发生什么？" class="headerlink" title="Q4：leader commit日志之前崩溃了，会发生什么？"></a>Q4：leader commit日志之前崩溃了，会发生什么？</h2><p>该问题在 raft 论文中有论述，是关于如何处理前任 leader 复制的日志。<strong>我当时的疑问是</strong>：leader 将最新的日志复制到了一部分节点后，或许是还未满足大多数原则，或许是 commit 之前就崩溃了，这些最新的日志会被怎么处理？</p><p>后来再次仔细阅读论文，发现并理解了更加细微的点。借助论文中对该问题的讨论部分的图示，再来复盘一下：</p><p><img src="/img/raft/Q4_1.png"></p><p>图中方块中的数字标识 Term，上方的数字标识 Index。</p><ol><li><p>(a)中，S1 为 Term2 的 leader，在将 Index&#x3D;2 的日志复制到 S2 后崩溃。</p></li><li><p>(b)中，S1 崩溃后，S5 在 Term3 当选 leader（根据选举限制，在最后一条日志中，S5 具有更大的 Term，所以能够当选）</p></li><li><p>(c)中，S5 崩溃，S1 在 Term4 当选 leader，并继续复制日志，此时它将 Index&#x3D;2 的日志成功复制到了大多数节点上，但还未提交。</p></li><li><p>(d1) 和 (d2) 描述两种情况：<br> 第一种是(d1)，以前任期复制的日志（未提交）被后面新的日志覆盖。客户端等待响应超时，会重新发起请求（我之前还在担心，这会不会造成数据丢失，太天真了）。对应的是 S1 再次崩溃，在 (c) 的局面下，S5 再次当选 leader（图中未画出新的任期，S5 可以获得 S2-4 的选票），由于复制日志以 leader 的日志为准，所以Index&#x3D;2的以前任期的日志会被 S5 的 Index&#x3D;2 的日志覆盖。</p><p> 第二种是(d2)，以前任期复制的日志可以被后面新的 leader 提交（属于被动提交，因为 raft 中，提交一条日志，就表示该条日志之前的所有日志都已被提交）。对应的是，S1 在崩溃之前将日志复制到了大多数节点上，此时 S5 已经不可能再当选，新的 leader 只能在 S1-3 之中。假设，S1 未崩溃，那么，S1 通过提交 Index&#x3D;3 的日志，之前的日志也就一起被动提交了；就算 S1 在提交之前崩溃了，新的 leader 通过提交当前任期的日志也能提交以前任期的所有日志。</p></li></ol><p><strong>从这里，应当认识到两点</strong>：<br>1）复制的日志可能会被覆盖，客户端会重试。<br>2）raft 算法中，leader 会强制要求其他节点的日志与自己一致，对安全性的考虑应该结合选举限制一起理解。</p>]]></content>
+    
+    
+    <categories>
+      
+      <category>分布式</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>raft</tag>
+      
+      <tag>分布式一致性协议</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>Hexo 博客使用记录</title>
+    <link href="/2022/06/13/Hexo%20%E5%8D%9A%E5%AE%A2%E4%BD%BF%E7%94%A8%E8%AE%B0%E5%BD%95/"/>
+    <url>/2022/06/13/Hexo%20%E5%8D%9A%E5%AE%A2%E4%BD%BF%E7%94%A8%E8%AE%B0%E5%BD%95/</url>
+    
+    <content type="html"><![CDATA[<p><strong>Record 1：文章内部图片死活加载不出来</strong><br>刚使用 fluid 主题时，文章封面图片可以设置，但文章内的图片无法显示，markdown 语法和 HTML 语法都无济于事。最后死马当活马医，将hexo-asset-image卸载了，重试，居然可以了。</p><br><p><strong>Record 2：图片存放问题</strong><br>有两个文件夹可以存放：&#x2F;source&#x2F;img 和 &#x2F;public&#x2F;img，但图片不能放在后者中，因为 &#x2F;public 目录下的东西都是执行 hexo g 生成的（从 &#x2F;source 目录获取相关内容），若执行 hexo clean 就全部被删除了。</p>]]></content>
     
     
     
