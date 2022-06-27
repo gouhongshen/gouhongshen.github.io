@@ -17,6 +17,7 @@ img {
 
 }
 
-table {
-    margin: auto;
-}
+html, body, .markdown-body {
+    font-family: Georgia,'华文中宋';
+    font-size: 20px;
+  }
