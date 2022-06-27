@@ -16,23 +16,23 @@
   <meta name="author" content="gouhongshen">
   <meta name="keywords" content="">
   
-    <meta name="description" content="终于搬新博客了 Record 1：文章内部图片死活加载不出来刚使用 fluid 主题时，文章封面图片可以设置，但文章内的图片无法显示，markdown 语法和 HTML 语法都无济于事。最后死马当活马医，将hexo-asset-image卸载了，重试，居然可以了。 Record 2：图片存放问题有两个文件夹可以存放：&#x2F;source&#x2F;img 和 &#x2F;public&amp;#x2F">
+    <meta name="description" content="前言事务的原子性和一致性（数据库数据一致性）的保证，除了在事务代码的编写（逻辑）、事务的调度（并发）上面下功夫外，还需要考虑系统故障的发生。当系统从故障中恢复后，应当正确处理这些异常，以保证事务的原子性和数据的一致性。 一个例子考虑银行有两个账户 A 和 B，初始账户分别为 1000 和 2000，一个事务负责从账户 A 转账 50 到账户 B。假设故障发生在事务执行过程中，那么有如下可能发生：">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Hexo 博客使用记录">
-<meta property="og:url" content="http://example.com/2022/06/13/Hexo%20%E5%8D%9A%E5%AE%A2%E4%BD%BF%E7%94%A8%E8%AE%B0%E5%BD%95/index.html">
+<meta property="og:title" content="事务篇四：Log-Based Recovery System">
+<meta property="og:url" content="http://example.com/2022/06/22/%E6%95%B0%E6%8D%AE%E5%BA%93%E6%81%A2%E5%A4%8D%E7%B3%BB%E7%BB%9F/index.html">
 <meta property="og:site_name" content="Gou&#39;s Blog">
-<meta property="og:description" content="终于搬新博客了 Record 1：文章内部图片死活加载不出来刚使用 fluid 主题时，文章封面图片可以设置，但文章内的图片无法显示，markdown 语法和 HTML 语法都无济于事。最后死马当活马医，将hexo-asset-image卸载了，重试，居然可以了。 Record 2：图片存放问题有两个文件夹可以存放：&#x2F;source&#x2F;img 和 &#x2F;public&amp;#x2F">
+<meta property="og:description" content="前言事务的原子性和一致性（数据库数据一致性）的保证，除了在事务代码的编写（逻辑）、事务的调度（并发）上面下功夫外，还需要考虑系统故障的发生。当系统从故障中恢复后，应当正确处理这些异常，以保证事务的原子性和数据的一致性。 一个例子考虑银行有两个账户 A 和 B，初始账户分别为 1000 和 2000，一个事务负责从账户 A 转账 50 到账户 B。假设故障发生在事务执行过程中，那么有如下可能发生：">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="http://example.com/img/usage-records/cite-local-paper.png">
-<meta property="article:published_time" content="2022-06-13T13:13:56.912Z">
-<meta property="article:modified_time" content="2022-06-22T09:45:15.399Z">
+<meta property="og:image" content="http://example.com/img/log-based_recovery_system/1.png">
+<meta property="article:published_time" content="2022-06-22T03:55:46.000Z">
+<meta property="article:modified_time" content="2022-06-27T08:08:49.832Z">
 <meta property="article:author" content="gouhongshen">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="http://example.com/img/usage-records/cite-local-paper.png">
+<meta name="twitter:image" content="http://example.com/img/log-based_recovery_system/1.png">
   
   
   
-  <title>Hexo 博客使用记录 - Gou&#39;s Blog</title>
+  <title>事务篇四：Log-Based Recovery System - Gou&#39;s Blog</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -199,7 +199,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="Hexo 博客使用记录"></span>
+            <span id="subtitle" data-typed-text="事务篇四：Log-Based Recovery System"></span>
           
         </div>
 
@@ -210,8 +210,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-06-13 21:13" pubdate>
-          2022年6月13日 晚上
+        <time datetime="2022-06-22 11:55" pubdate>
+          2022年6月22日 中午
         </time>
       </span>
     
@@ -222,7 +222,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          318 字
+          551 字
         
       </span>
     
@@ -233,7 +233,7 @@
         
         
         
-          4 分钟
+          7 分钟
         
       </span>
     
@@ -271,20 +271,46 @@
         <div id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">Hexo 博客使用记录</h1>
+            <h1 style="display: none">事务篇四：Log-Based Recovery System</h1>
             
             <div class="markdown-body">
               
-              <p>终于搬新博客了</p>
-<h3 id="Record-1：文章内部图片死活加载不出来"><a href="#Record-1：文章内部图片死活加载不出来" class="headerlink" title="Record 1：文章内部图片死活加载不出来"></a>Record 1：文章内部图片死活加载不出来</h3><p>刚使用 fluid 主题时，文章封面图片可以设置，但文章内的图片无法显示，markdown 语法和 HTML 语法都无济于事。最后死马当活马医，将hexo-asset-image卸载了，重试，居然可以了。</p>
-<h3 id="Record-2：图片存放问题"><a href="#Record-2：图片存放问题" class="headerlink" title="Record 2：图片存放问题"></a>Record 2：图片存放问题</h3><p>有两个文件夹可以存放：&#x2F;source&#x2F;img 和 &#x2F;public&#x2F;img，但图片不能放在后者中，因为 &#x2F;public 目录下的东西都是执行 hexo g 生成的（从 &#x2F;source 目录获取相关内容），若执行 hexo clean 就全部被删除了。</p>
-<h3 id="Record-3-引用本地文章"><a href="#Record-3-引用本地文章" class="headerlink" title="Record 3: 引用本地文章"></a>Record 3: 引用本地文章</h3><p>使用这样的格式 (明白为什么要用图片吧 -_- )：<br><img src="/img/usage-records/cite-local-paper.png" srcset="/img/loading.gif" lazyload></p>
-
+              <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><img src="/img/log-based_recovery_system/1.png" srcset="/img/loading.gif" lazyload alt="磁盘交互模型"><br>事务的原子性和一致性（数据库数据一致性）的保证，除了在事务代码的编写（逻辑）、事务的调度（并发）上面下功夫外，还需要考虑系统故障的发生。当系统从故障中恢复后，应当正确处理这些异常，以保证事务的原子性和数据的一致性。</p>
+<p><font color=dark-green>一个例子</font><br>考虑银行有两个账户 A 和 B，初始账户分别为 1000 和 2000，一个事务负责从账户 A 转账 50 到账户 B。假设故障发生在事务执行过程中，那么有如下可能发生：</p>
+<ol>
+<li>A &#x3D; 950，B &#x3D; 2050</li>
+<li>A &#x3D; 950，B &#x3D; 2000</li>
+<li>A &#x3D; 1000，B &#x3D; 2050</li>
+<li>A &#x3D; 1000，B &#x3D; 2000</li>
+</ol>
+<p>根据磁盘交互模型图可知，事务需要先将需要的数据从 buffer pool 读入自己的私有内存，等到操作完成再将更新后的数据写入 buffer pool，至于这些数据何时会写入磁盘与 buffer pool 页面置换算法有关。上面情况1表示一切正常；情况2表示含有新的A的 block 被正常写入磁盘后系统崩溃；情况3表示含有新的B的 block 被正常写入磁盘后系统崩溃；情况4表示两个 block 都还未写入磁盘就发生故障（当然A和B可能存在于同一个 block 中）。在情况2和3中数据库一致性都已被破坏，事务的原子性也未能保证。</p>
+<h2 id="Log-Based-Recovery-System"><a href="#Log-Based-Recovery-System" class="headerlink" title="Log-Based Recovery System"></a>Log-Based Recovery System</h2>
               
             </div>
             <hr/>
             <div>
               <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E4%BA%8B%E5%8A%A1/" class="category-chain-item">事务</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
   
   
 </div>
@@ -295,8 +321,8 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>Hexo 博客使用记录</div>
-      <div>http://example.com/2022/06/13/Hexo 博客使用记录/</div>
+      <div>事务篇四：Log-Based Recovery System</div>
+      <div>http://example.com/2022/06/22/数据库恢复系统/</div>
     </div>
     <div class="license-meta">
       
@@ -308,7 +334,7 @@
       
         <div class="license-meta-item license-meta-date">
           <div>发布于</div>
-          <div>2022年6月13日</div>
+          <div>2022年6月22日</div>
         </div>
       
       
@@ -338,15 +364,21 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2022/06/14/raft-%E6%9D%82%E8%AE%B0/" title="Raft 算法问答录">
+                      <a href="/2022/06/22/%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%8F%AF%E4%B8%B2%E8%A1%8C%E5%8C%96/" title="事务篇二：事务的可串行化">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">Raft 算法问答录</span>
+                        <span class="hidden-mobile">事务篇二：事务的可串行化</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     
                   </article>
                   <article class="post-next col-6">
                     
+                    
+                      <a href="/2022/06/22/%E4%BA%8B%E5%8A%A1%E6%80%BB%E8%AE%BA/" title="事务篇一：事务总论">
+                        <span class="hidden-mobile">事务篇一：事务总论</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
                     
                   </article>
                 </div>

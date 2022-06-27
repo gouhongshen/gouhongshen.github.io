@@ -8,7 +8,7 @@
 <head>
   <meta charset="UTF-8">
   <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
-  <link rel="icon" href="/img/browser_tag.jpg">
+  <link rel="icon" href="/img/custom/browser_tag.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
@@ -16,25 +16,26 @@
   <meta name="author" content="gouhongshen">
   <meta name="keywords" content="">
   
-    <meta name="description" content="前言前段时间学习了 CMU-15445 的课程，也写完了 project，了解了数据库内核的基本知识。这段时间在做 TinyKV，刚好看了 raft，细节很多，所以来总结下。 关于 raft 网上有很多资料：raft 论文raft 博客etcd raft 实现 所以，这里并不是对 raft 算法本身的细节记录，而是自己阅读、实现时的一些疑问和解答。 Q1：raft算法解决了什么问题？raft 是一">
+    <meta name="description" content="前言前段时间学习了 CMU-15445 的课程，也写完了 project，了解了数据库内核的基本知识。这段时间在做 TinyKV，刚好看了 raft，细节很多，所以来总结下。 关于 raft 网上有很多资料：raft 小论文raft 博士论文raft 博客etcd raft 实现 所以，这里并不是对 raft 算法本身的细节记录，而是自己阅读、实现时的一些疑问和解答。 Q1：raft算法解决了什么">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Raft 算法杂记">
+<meta property="og:title" content="Raft 算法问答录">
 <meta property="og:url" content="http://example.com/2022/06/14/raft-%E6%9D%82%E8%AE%B0/index.html">
 <meta property="og:site_name" content="Gou&#39;s Blog">
-<meta property="og:description" content="前言前段时间学习了 CMU-15445 的课程，也写完了 project，了解了数据库内核的基本知识。这段时间在做 TinyKV，刚好看了 raft，细节很多，所以来总结下。 关于 raft 网上有很多资料：raft 论文raft 博客etcd raft 实现 所以，这里并不是对 raft 算法本身的细节记录，而是自己阅读、实现时的一些疑问和解答。 Q1：raft算法解决了什么问题？raft 是一">
+<meta property="og:description" content="前言前段时间学习了 CMU-15445 的课程，也写完了 project，了解了数据库内核的基本知识。这段时间在做 TinyKV，刚好看了 raft，细节很多，所以来总结下。 关于 raft 网上有很多资料：raft 小论文raft 博士论文raft 博客etcd raft 实现 所以，这里并不是对 raft 算法本身的细节记录，而是自己阅读、实现时的一些疑问和解答。 Q1：raft算法解决了什么">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="http://example.com/img/raft/raft_cover.png">
+<meta property="og:image" content="http://example.com/img/raft/rsm.png">
+<meta property="og:image" content="http://example.com/img/raft/Q4_1.png">
 <meta property="article:published_time" content="2022-06-14T11:31:45.000Z">
-<meta property="article:modified_time" content="2022-06-17T08:17:40.237Z">
+<meta property="article:modified_time" content="2022-06-25T01:38:16.566Z">
 <meta property="article:author" content="gouhongshen">
 <meta property="article:tag" content="raft">
 <meta property="article:tag" content="分布式一致性协议">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="http://example.com/img/raft/raft_cover.png">
+<meta name="twitter:image" content="http://example.com/img/raft/rsm.png">
   
   
   
-  <title>Raft 算法杂记 - Gou&#39;s Blog</title>
+  <title>Raft 算法问答录 - Gou&#39;s Blog</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -201,7 +202,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="Raft 算法杂记"></span>
+            <span id="subtitle" data-typed-text="Raft 算法问答录"></span>
           
         </div>
 
@@ -273,12 +274,12 @@
         <div id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">Raft 算法杂记</h1>
+            <h1 style="display: none">Raft 算法问答录</h1>
             
             <div class="markdown-body">
               
               <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前段时间学习了 CMU-15445 的课程，也写完了 project，了解了数据库内核的基本知识。这段时间在做 TinyKV，刚好看了 raft，细节很多，所以来总结下。</p>
-<p>关于 raft 网上有很多资料：<br><a target="_blank" rel="noopener" href="https://raft.github.io/raft.pdf">raft 论文</a><br><a target="_blank" rel="noopener" href="https://tanxinyu.work/raft/">raft 博客</a><br><a target="_blank" rel="noopener" href="https://www.codedump.info/post/20180922-etcd-raft/">etcd raft 实现</a></p>
+<p>关于 raft 网上有很多资料：<br><a target="_blank" rel="noopener" href="https://raft.github.io/raft.pdf">raft 小论文</a><br><a target="_blank" rel="noopener" href="http://files.catwell.info/misc/mirror/2014-ongaro-raft-phd.pdf">raft 博士论文</a><br><a target="_blank" rel="noopener" href="https://tanxinyu.work/raft/">raft 博客</a><br><a target="_blank" rel="noopener" href="https://www.codedump.info/post/20180922-etcd-raft/">etcd raft 实现</a></p>
 <p>所以，这里并不是对 raft 算法本身的细节记录，而是自己阅读、实现时的一些疑问和解答。</p>
 <h2 id="Q1：raft算法解决了什么问题？"><a href="#Q1：raft算法解决了什么问题？" class="headerlink" title="Q1：raft算法解决了什么问题？"></a>Q1：raft算法解决了什么问题？</h2><p>raft 是一个分布式共识协议（算法），其主要作用是让集群中的节点对某件事情达成一致，如客户端发起更新请求，为了保证多个节点的数据状态一致，就需要让该更新请求在所有节点上都应用成功，否则更新请求失败。raft 算法可以看作一个黑匣子，当某个节点接收到客户端的请求后，首先将该请求交给 raft 模块，由 raft 模块负责节点间的协商，最后将结果返回给节点，节点再反馈客户端。如下图的复制状态机所示。</p>
 <p><img src="/img/raft/rsm.png" srcset="/img/loading.gif" lazyload></p>
@@ -378,7 +379,7 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>Raft 算法杂记</div>
+      <div>Raft 算法问答录</div>
       <div>http://example.com/2022/06/14/raft-杂记/</div>
     </div>
     <div class="license-meta">
