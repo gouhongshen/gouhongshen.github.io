@@ -26,8 +26,9 @@
 <meta property="og:image" content="http://example.com/img/log-based_recovery_system/1.png">
 <meta property="og:image" content="http://example.com/img/log-based_recovery_system/2.png">
 <meta property="og:image" content="http://example.com/img/log-based_recovery_system/3.png">
+<meta property="og:image" content="http://example.com/img/log-based_recovery_system/4.jpg">
 <meta property="article:published_time" content="2022-06-22T03:55:46.000Z">
-<meta property="article:modified_time" content="2022-06-28T03:45:13.432Z">
+<meta property="article:modified_time" content="2022-06-28T07:52:27.013Z">
 <meta property="article:author" content="gouhongshen">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="http://example.com/img/log-based_recovery_system/1.png">
@@ -224,7 +225,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          3.3k 字
+          4.8k 字
         
       </span>
     
@@ -235,7 +236,7 @@
         
         
         
-          37 分钟
+          54 分钟
         
       </span>
     
@@ -310,14 +311,14 @@
 </ul>
 <p>只要遵守了以上原则，无论是系统崩溃后恢复还是事务的正常 abort，系统都可以根据这些记录将系统恢复到一致状态，事务自然也就保证了原子性。因此日志记录在 log 文件（stable storage）中的<strong>顺序十分重要</strong>，必须和写入 log buffer（buffer block）的顺序一致。</p>
 <h3 id="Recovery-Algorithm"><a href="#Recovery-Algorithm" class="headerlink" title="Recovery Algorithm"></a>Recovery Algorithm</h3><p>在介绍恢复算法之前，先看看事务在正常情况下的流程，第一种是事务因失败需要 abort 回滚；第二种是事务正常提交。</p>
-<p><strong>Case 1：正常 abort，事务回滚</strong>。当事务 $T_i$ 执行到一半时因为某些原因失败需要 abort 回滚（rollback 之后才能算 aborted）。回滚也就是将该事务对数据库所做的修改撤销，系统做如下操作（如图 2 示）：</p>
+<p><strong>Case 1: 事务正常提交</strong>。这种情况下事务不需要回滚，日志文件就像图 2 所示那样。</p>
+<p><strong>Case 2：正常 abort，事务回滚</strong>。当事务 $T_i$ 执行到一半时因为某些原因失败需要 abort 回滚（rollback 之后才能算 aborted）。回滚也就是将该事务对数据库所做的修改撤销，系统做如下操作（如图 3 示）：</p>
 <ul>
 <li>系统向后扫描 log 文件（注意 log 文件是只追加的，向前是指追加的方向），对于每一条属于 $T_i$ 的更新记录 &lt;$T_i,\ X_j,\ V_1,\ V_2$&gt;，系统将使用旧值 $V_1$ 更新 $X_i$ （即撤销修改），同时向日志追加一条 redo-only 记录 $&lt;T_i,\ X_j,\ V_1$&gt;。</li>
 <li>当遇到记录 &lt;$T_i\ $start&gt;，系统向日志追加一条 &lt;$T_i\ $abort&gt; 记录，对于该事务的回滚也就结束了。</li>
 </ul>
 <p>系统回滚所添加的这些日志记录又被称为 compensation log records. 其实可以这样理解，事务中止处于未完成状态，系统创建一个互补事务，负责撤销事务所做的更改，并补充完整日志记录。</p>
 <p><img src="/img/log-based_recovery_system/3.png" srcset="/img/loading.gif" lazyload alt="图 3"></p>
-<p><strong>Case 2: 事务正常提交</strong>。这种情况下事务不需要回滚，日志文件就像图 2 所示那样。</p>
 <br>
 
 <p><font color=dark-green>恢复算法思想</font><br>系统重启后是很懵逼的，它不清楚执行过的事务的具体情况，所以它需要查看 log 文件，根据日志记录的完整性，可以将事务分为两种：</p>
@@ -327,20 +328,44 @@
 <li><p><u>事务执行未完成</u>。当系统重启后，发现某事务在 log 文件中没有包含完整的日志记录，即缺少了 &lt;$T_i\ $commit&gt; 或 &lt;$T_i\ $abort&gt; 记录，为保证事务的原子性和数据的一致性，该事务所做的操作必须撤销，<strong>也就是必须 undo 这些操作</strong>。当然，系统有可能在 rollback 未完成时就发生了故障，也就是日志中含有不完整的 redo-only 记录，undo 这些记录实际上就是 redo 它们。</p>
 </li>
 </ul>
-<p>上面简单描述了恢复算法的的思想，很朴素，<font color=red>但却存在很大的性能问题</font>，试想在系统重启之前可能存在成千上百的事务执行大量的操作，这些操作都记录在了 log 文件中，log 文件可能变得十分巨大，若系统重启后对这些操作全都执行 redo 或 undo，系统可用性就会很差，何况，有很多操作已经实实在在写入了数据库，不需要在做额外的操作。为了减少恢复时间，数据库系统通常采用一种简单的方法，称作 checkpoints. </p>
-<p><font color=dark-green>Checkpoints 思想</font></p>
-<p><font color=dark-green>恢复算法详细步骤</font></p>
+<p>上面简单描述了恢复算法的的思想，很朴素，<font color=red>但却存在很大的性能问题</font>，试想在系统重启之前可能存在成千上百的事务执行大量的操作，这些操作都记录在了 log 文件中，log 文件可能变得十分巨大，若系统重启后对这些操作全都执行 redo 或 undo，系统可用性就会很差，何况，有很多操作已经实实在在写入了数据库，不需要再做额外的操作。为了减少恢复时间，数据库系统通常采用一种简单的方法，称作 checkpoints. </p>
 <br>
 
-<p>总结以下，log record 有这些类型：</p>
+<p><font color=dark-green>Checkpoints 思想</font><br>checkpoint 是一组如下的操作：</p>
+<ol>
+<li>从 log buffer <em>output</em> 所有的日志记录到 stable storage 中。</li>
+<li>从 data buffer <em>output</em> 所有的数据修改到数据库磁盘文件中。</li>
+<li>系统向日志文件追加一条 &lt;checkpoint L&gt; 记录，并 <em>output</em> 到 stable storage 中。L 是一组事务标识符的集合，表示执行 checkpoint 时，还处于活跃状态的事务集合。</li>
+</ol>
+<p><font color=red>那么有了 checkpoint 后，又当如何缓解上述问题呢？</font>假设存在一个事务 $T_i$，它在执行 checkpoint 操作之前已经完成（committed 或 aborted），那么该事务的相关日志记录要么在 checkpoint 之前 <em>output</em> 到日志文件了，要么在 checkpoint 过程中 <em>output</em> 到日志文件，总之这些记录出现在 &lt;checkpoint L&gt; 之前，即 L 中不包含 $T_i$，系统重启后，也自然没有必要 redo $T_i$ 的操作了。随着日志文件越来越大，有了 checkpoint 记录，就可以丢弃以前的记录了，反正也用不上了。</p>
+<br>
+
+<p><font color=dark-green>恢复算法详细步骤</font><br>有了以上的知识背景，现在可以提出完整的 log-based recovery algorithm 步骤了，当数据库系统从崩溃中重启后，会完成如下两个部分的工作：</p>
+<p><strong>重放阶段（Redo Phase）</strong>. 该阶段，系统从最后一条 checkpoint 记录开始<font color=red>向前扫描</font>（追加方向），重新执行具有完整日志记录（含有 commit 或 abort 记录）的事务所做的操作。另外，该阶段在扫描时，还会记录 undo-list，包含那些没有完整记录（不含有 commit 或 abort 记录）的事务标识符，这些事务要么出现在最后一条 checkpoint 记录的 L 中，要么在最后一次 checkpoint 操作后才开始。在扫描过程中，有如下步骤：</p>
+<ol>
+<li>使用最后一条 checkpoint 记录中的 L 集合初始化 undo-list</li>
+<li>当扫描到一条更新记录 &lt;$T_i,\ X_j,\ V_1,\ V_2$&gt; 或者 redo-only 记录 &lt;$T_i,\ X_j,\ V_1$&gt; 时，系统重新执行记录表示的操作。</li>
+<li>当扫描到一条 &lt;$T_i\ $start&gt; 记录时，将 $T_i$ 添加到 undo-list 中。</li>
+<li>当扫描到一条 &lt;$T_i\ $commit&gt; 或 &lt;$T_i\ $abort&gt; 记录时，将 $T_i$ 从 undo-list 中移除。</li>
+</ol>
+<p><strong>撤销阶段（Undo Phase）</strong>. 上一阶段结束后，undo-list 包含了所有处于未完成状态的事务标识符。系统从日志文件结束位置开始<font color=red>向后扫描</font>，撤销这些未完成事务的所有操作，扫描中，包含如下步骤：</p>
+<ol>
+<li>当扫描到属于 undo-list 中事务的日志时，执行 undo 操作，和正常情况下事务失败回滚的操作一样。</li>
+<li>当扫描到属于 undo-list 中事务的 &lt;$T_i\ $start&gt; 日志后，系统向日志文件追加一条 &lt;$T_i\ $abort&gt;，并将该事务从 undo-list 中移除。</li>
+<li>当 undo-list 为空时，扫描停止，该阶段结束。</li>
+</ol>
+<p>在 redo 阶段可能存在重复的操作，比如正常情况下的失败事务的日志记录和回滚时的记录，但正是这少许的重复，使得整个流程简单了不少，只需要两遍扫描就能完成恢复。上述两个过程如图 4 所示：<br><img src="/img/log-based_recovery_system/4.jpg" srcset="/img/loading.gif" lazyload alt="图 4"></p>
+<br>
+
+<p><font color=dark-green>一些细节</font><br>checkpoint 阶段应该也是原子操作，也就是说，在执行 checkpoint 时，不允许事务向 buffer 中写更新，这个要求可以通过 fuzzy checkpoint 技术放松，这里不谈。</p>
+<p>而且，当 buffer block 向磁盘 <em>output</em> 时，也不允许事务向 buffer block 执行写操作，不然可能会违法 WAL 规则。</p>
+<p>保证以上两个要求，可以通过特殊的锁：</p>
 <ul>
-<li>&lt;$T_i,\ X_j,\ V_1,\ V_2$&gt;. 更新记录（update log record）</li>
-<li>&lt;$T_i,\ X_j,\ V_2$&gt;. 回滚记录（redo only record）</li>
-<li>&lt;$T_i\ $start&gt;. 事务开始记录（transaction start record）</li>
-<li>&lt;$T_i\ $commit&gt;. 事务提交记录（transaction commit record）</li>
-<li>&lt;$T_i\ $abort&gt;. 事务中止记录（transaction abort record）</li>
-<li>&lt;checkpoint L&gt;. checkpoint record</li>
+<li>当事务执行 <em>write</em> 时，应当先获取数据所在 buffer block 的排它锁，当更新执行完后，立即释放锁。</li>
+<li>当 <em>output</em> data buffer block 时，应该先获取 该 block 的排它锁，然后 <em>output</em> 与该 block 数据相关的所有 log records 到 stable storage 中，再然后 <em>output</em> 该 block 的数据到数据库磁盘文件中，最后释放该锁。</li>
 </ul>
+<p>可以看到，这里的锁持有的时间很短，一般将这种锁称为 latch.</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>虽然写了这么多，但这些却是最简单的知识，还有很多高级的话题没写，等着以后学习深入了再来补充吧。</p>
 
               
             </div>
@@ -450,7 +475,7 @@
     Fluid.utils.loadComments('#valine', function() {
       Fluid.utils.createScript('https://lib.baomitu.com/valine/1.4.18/Valine.min.js', function() {
         var options = Object.assign(
-          {"appId":"mdz4rPGiufclpz8CRqNFIIJV-gzGzoHsz","appKey":"s91bYzOoIDnnHpHSnMiUBUiU","path":"window.location.pathname","placeholder":null,"avatar":"retro","meta":["nick","mail","link"],"requiredFields":[],"pageSize":10,"lang":"zh-CN","highlight":false,"recordIP":false,"serverURLs":"","emojiCDN":null,"emojiMaps":null,"enableQQ":false},
+          {"appId":"mdz4rPGiufclpz8CRqNFIIJV-gzGzoHsz","appKey":"s91bYzOoIDnnHpHSnMiUBUiU","path":"window.location.pathname","placeholder":"吐槽一下","avatar":"retro","meta":["nick","mail","link"],"requiredFields":[],"pageSize":10,"lang":"zh-CN","highlight":false,"recordIP":false,"serverURLs":"https://mdz4rpgi.lc-cn-n1-shared.com","emojiCDN":null,"emojiMaps":null,"enableQQ":false},
           {
             el: "#valine",
             path: window.location.pathname
