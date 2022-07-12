@@ -16,17 +16,19 @@
   <meta name="author" content="gouhongshen">
   <meta name="keywords" content="">
   
-    <meta name="description" content="前言前段时间学习了 CMU-15445 的课程，也写完了 project，了解了数据库内核的基本知识。这段时间在做 TinyKV，刚好看了 raft，细节很多，所以来总结下。 关于 raft 网上有很多资料：raft 小论文raft 博士论文raft 博客etcd raft 实现 所以，这里并不是对 raft 算法本身的细节记录，而是自己阅读、实现时的一些疑问和解答。 Q1：raft算法解决了什么">
+    <meta name="description" content="前言前段时间学习了 CMU-15445 的课程，也写完了 project，了解了数据库内核的基本知识。这段时间在做 TinyKV，刚好看了 raft，细节很多，所以来总结下。 关于 raft 网上有很多资料：raft 小论文raft 博士论文raft 博客etcd raft 实现 所以，这里并不是对 raft 算法本身的细节记录（可能存在部分），而是自己阅读、实现时的一些疑问和解答。 Q0: ra">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Raft 算法问答录">
 <meta property="og:url" content="http://example.com/2022/06/14/raft-%E6%9D%82%E8%AE%B0/index.html">
 <meta property="og:site_name" content="Gou&#39;s Blog">
-<meta property="og:description" content="前言前段时间学习了 CMU-15445 的课程，也写完了 project，了解了数据库内核的基本知识。这段时间在做 TinyKV，刚好看了 raft，细节很多，所以来总结下。 关于 raft 网上有很多资料：raft 小论文raft 博士论文raft 博客etcd raft 实现 所以，这里并不是对 raft 算法本身的细节记录，而是自己阅读、实现时的一些疑问和解答。 Q1：raft算法解决了什么">
+<meta property="og:description" content="前言前段时间学习了 CMU-15445 的课程，也写完了 project，了解了数据库内核的基本知识。这段时间在做 TinyKV，刚好看了 raft，细节很多，所以来总结下。 关于 raft 网上有很多资料：raft 小论文raft 博士论文raft 博客etcd raft 实现 所以，这里并不是对 raft 算法本身的细节记录（可能存在部分），而是自己阅读、实现时的一些疑问和解答。 Q0: ra">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://example.com/img/raft/rsm.png">
 <meta property="og:image" content="http://example.com/img/raft/Q4_1.png">
+<meta property="og:image" content="http://example.com/img/raft/Q5-1.png">
+<meta property="og:image" content="http://example.com/img/raft/Q5-2.png">
 <meta property="article:published_time" content="2022-06-14T11:31:45.000Z">
-<meta property="article:modified_time" content="2022-06-25T01:38:16.566Z">
+<meta property="article:modified_time" content="2022-07-12T11:23:49.091Z">
 <meta property="article:author" content="gouhongshen">
 <meta property="article:tag" content="raft">
 <meta property="article:tag" content="分布式一致性协议">
@@ -77,7 +79,7 @@
   <script id="fluid-configs">
     var Fluid = window.Fluid || {};
     Fluid.ctx = Object.assign({}, Fluid.ctx)
-    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.1","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"LNOx2vLkIuWg9k1cy08Is3vl-MdYXbMMI","app_key":"zzkSgrAk6AEncP4gqAbFFQRR","server_url":"https://lnox2vlk.api.lncldglobal.com","path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.1","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"LNOx2vLkIuWg9k1cy08Is3vl-MdYXbMMI","app_key":"zzkSgrAk6AEncP4gqAbFFQRR","server_url":null,"path":"window.location.pathname","ignore_local":true}},"search_path":"/local-search.xml"};
 
     if (CONFIG.web_analytics.follow_dnt) {
       var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
@@ -225,7 +227,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          3.3k 字
+          8.8k 字
         
       </span>
     
@@ -236,7 +238,7 @@
         
         
         
-          37 分钟
+          99 分钟
         
       </span>
     
@@ -288,60 +290,140 @@
               
               <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前段时间学习了 CMU-15445 的课程，也写完了 project，了解了数据库内核的基本知识。这段时间在做 TinyKV，刚好看了 raft，细节很多，所以来总结下。</p>
 <p>关于 raft 网上有很多资料：<br><a target="_blank" rel="noopener" href="https://raft.github.io/raft.pdf">raft 小论文</a><br><a target="_blank" rel="noopener" href="http://files.catwell.info/misc/mirror/2014-ongaro-raft-phd.pdf">raft 博士论文</a><br><a target="_blank" rel="noopener" href="https://tanxinyu.work/raft/">raft 博客</a><br><a target="_blank" rel="noopener" href="https://www.codedump.info/post/20180922-etcd-raft/">etcd raft 实现</a></p>
-<p>所以，这里并不是对 raft 算法本身的细节记录，而是自己阅读、实现时的一些疑问和解答。</p>
+<p>所以，这里并不是对 raft 算法本身的细节记录（可能存在部分），而是自己阅读、实现时的一些疑问和解答。</p>
+<h2 id="Q0-raft-算法有哪些优化？"><a href="#Q0-raft-算法有哪些优化？" class="headerlink" title="Q0: raft 算法有哪些优化？"></a>Q0: raft 算法有哪些优化？</h2><ol>
+<li>PreVote 见 Q3.</li>
+<li>Lease 见 Q6.</li>
+<li></li>
+</ol>
 <h2 id="Q1：raft算法解决了什么问题？"><a href="#Q1：raft算法解决了什么问题？" class="headerlink" title="Q1：raft算法解决了什么问题？"></a>Q1：raft算法解决了什么问题？</h2><p>raft 是一个分布式共识协议（算法），其主要作用是让集群中的节点对某件事情达成一致，如客户端发起更新请求，为了保证多个节点的数据状态一致，就需要让该更新请求在所有节点上都应用成功，否则更新请求失败。raft 算法可以看作一个黑匣子，当某个节点接收到客户端的请求后，首先将该请求交给 raft 模块，由 raft 模块负责节点间的协商，最后将结果返回给节点，节点再反馈客户端。如下图的复制状态机所示。</p>
 <p><img src="/img/raft/rsm.png" srcset="/img/loading.gif" lazyload></p>
 <p>图中的 consensus module 就相当于 raft 黑匣子，state machine 可以理解为 kv 键值数据库。还需要注意两点：1）日志记录和协商同步进行；2）图中是分层的，表示多个客户端和集群节点。</p>
 <h2 id="Q2：在实际实现中，整个分布式系统的流程如何？"><a href="#Q2：在实际实现中，整个分布式系统的流程如何？" class="headerlink" title="Q2：在实际实现中，整个分布式系统的流程如何？"></a>Q2：在实际实现中，整个分布式系统的流程如何？</h2><p>这个问题实际是关于</p>
-<ol>
+<ul>
 <li>集群节点如何与客户端交互？</li>
 <li>集群节点如何与 raft 模块交互？</li>
 <li>raft 模块如何与其他 raft 模块交互？</li>
-</ol>
+</ul>
 <p>要解答这些问题，需要借助现有的成熟的工业系统，比如 etcd、tikv 等等，因为比较熟悉 TinyKV，所以以它为例。</p>
 <p>TinyKV 的设计参照了 etcd，将 raft 模块设计成独立的部分，raft 需要的网络、存储服务由上层（非 raft)提供，比较具有灵活性，具体流程如下：</p>
-<ol>
+<ul>
 <li>客户端向节点发送请求（put&#x2F;get&#x2F;delete…)</li>
 <li>节点准备 WAL(write-ahead-log)</li>
 <li>节点将请求封装成 entry 发送给 raft 模块</li>
-<li>节点获取 raft 算法的输出，主要有一下部分：<br> 1）raft 需要存储的日志记录（unstable entry 和一些 raft 自身状态信息）<br> 2）committed entry（已经在大多数节点间达成一致的 entry）<br> 3）messages，需要发往其他 raft 模块的消息</li>
+<li>节点获取 raft 算法的输出，主要有以下部分：<ul>
+<li>raft 需要存储的日志记录（unstable entry 和一些 raft 自身状态信息）</li>
+<li>committed entry（已经在大多数节点间达成一致的 entry）</li>
+<li>messages，需要发往其他 raft 模块的消息</li>
+</ul>
+</li>
 <li>节点获取到 raft 的输出后，按其类型做一些操作，对于 unstable entry 和状态信息，执行持久化操作；对于 committed entry，它们已处于安全状态，可以应用于数据库了，并且可以就这些 entry 中的请求向客户端反馈成功；对于messages，将其发送到对应的 raft 模块。完成以上操作后，通知 raft 模块。</li>
-</ol>
-<p><em>为什么 raft 会存储 unstable entry 和状态信息，比如 peers，是为了从崩溃中恢复</em></p>
+</ul>
+<p><u>为什么 raft 会存储 unstable entry 和状态信息，比如 peers，是为了从崩溃中恢复</u></p>
 <p><strong>总结一下</strong>，raft 模块被独立实现，其算法输入来自上层（这里的输入可能是客户端请求，也可能是其他 raft 模块的消息），其算法输出由上层负责处理（存储、发送等），从这里也能知道，raft 根本不关心 entry 中的具体请求，那是上层逻辑的责任，它只需要采取办法能够唯一标识一条 entry 即可（Term、Index）。</p>
 <h2 id="Q3：当网络分区发生时，raft算法有什么表现？"><a href="#Q3：当网络分区发生时，raft算法有什么表现？" class="headerlink" title="Q3：当网络分区发生时，raft算法有什么表现？"></a>Q3：当网络分区发生时，raft算法有什么表现？</h2><p>该问题比较大，需要分类讨论：</p>
-<ol>
+<ul>
 <li>单个 follower 节点被隔离，恢复后，会发生什么？</li>
 <li>网络分区发生时，leader 处在少数部分，恢复后会发生什么？</li>
 <li>网络分区发生时，leader 处在多数部分，恢复后会发生什么？</li>
-</ol>
+</ul>
 <p><font color=red>对于第一个问题</font>，先看被隔离节点的表现：因为是 follower，它只能被动应答，在一段时间内没有异常发生。等到 election_timeout 后，它自增 Term，发起选举请求，由于网络问题，其他节点接收不到该请求，然后再次等到 election_timeout，再次自增 Term，发起选举请求……它重复该操作，直到从隔离中恢复。</p>
-<p>该节点（记为 A）从隔离中恢复后，可能会先收到 leader 发来的 AppenEntriesRPC 或者 HeartBeatRPC，但 leader.Term &lt; A.Term，根据算法，这些 RPC 对 A 没有影响，但 leader 会受到影响，leader 会转变为 follower。集群中先超时的节点会率先发起选举请求，由于存在选举限制：<strong>要获取到大多数的选票，就必须具有最新的日志记录（通过比较最后一份日志的 Term 和 Index 判断）</strong>，这样的选举可能会持续多次，但无论如何节点 A 都不可能当选 leader，因为它被隔离，没有后面新追加的日志。也就是说，节点 A 的重新加入造成了系统不必要的抖动，其原因在于，节点 A 在隔离期间盲目地自增 Term。</p>
-<p>etcd 是如何解决该问题的呢？采用 preVote 机制，即当一个节点超时后，它并不急于自增 Term，而是先发起选举请求，如果能获取到大多数的选票，再自增 Term 重新发起选举。</p>
+<p>该节点（记为 A）从隔离中恢复后，可能会先收到 leader 发来的 AppenEntriesRPC 或者 HeartBeatRPC，但 leader.Term &lt; A.Term，根据算法，这些 RPC 对 A 没有影响，但 leader 会受到影响（response 中的 Term 比 leader 的 Term 大），leader 会转变为 follower。集群中先超时的节点会率先发起选举请求，由于存在选举限制：<strong>要获取到大多数的选票，就必须具有最新的日志记录（通过比较最后一份日志的 Term 和 Index 判断）</strong>，这样的选举可能会持续多次，但无论如何节点 A 都不可能当选 leader，因为它被隔离，没有后面新追加的日志。也就是说，节点 A 的重新加入造成了系统不必要的抖动，其原因在于，节点 A 在隔离期间盲目地自增 Term。</p>
+<p>etcd 是如何解决该问题的呢？采用 PreVote 机制，即当一个节点超时后，它并不急于自增 Term，而是先发起选举请求，如果能获取到大多数的选票，再自增 Term 重新发起选举。这样，当 follower 从隔离中恢复后，就不会因为 Term 过大干扰集群的正常流程。下面是 Raft 博士论文中的叙述：</p>
+<blockquote>
+<p>The Pre-Vote algorithm solves the issue of a partitioned server disrupting the cluster when it rejoins.</p>
+</blockquote>
+<p><u>然而，还有这样一种情况</u>，当 A 从隔离中恢复后，由于其未收到 heartbeat 超时，发起选举，虽然其 Term 没有增加（PreVote 的限制），但是它在大多数节点中仍然具有较新的日志（可能是隔离期间没有新的请求，也可能是隔离时间比较短，新的日志还没有复制到大多数的节点上），依然可以当选 leader。集群当然可以正常工作，但旧 leader 上还未来得及复制的新日志就会被覆盖，客户端也就需要超时重试，这实际上也算一个干扰，该问题的解决方式会在 Q6 中问题三提到（租约期-Lease）。</p>
 <br>
-<font color=red>对于第二个问题</font>，leader 处在少数节点分区部分，根据 raft 要求，一条 entry 能被提交，该entry 至少需要被 N/2 + 1 个节点安全复制，因此上层交付的任务 proposal 都无法被提交，自然无法被应用到数据库和反馈客户端，客户端会出现请求超时。后面的客户端请求可能会被路由到另外一个节点，直到请求能够被正常执行。
 
+<p><font color=red>对于第二个问题</font>，leader 处在少数节点分区部分，根据 raft 要求，一条 entry 能被提交，该entry 至少需要被 N&#x2F;2 + 1 个节点安全复制，因此上层交付的任务 proposal 都无法被提交，自然无法被应用到数据库和反馈客户端，客户端会出现请求超时。后面的客户端请求可能会被路由到另外一个节点，直到请求能够被正常执行。</p>
 <p>当网络分区恢复后，该 leader 会接受来自新 leader 的 RPC 请求，转换成 follower，开始正常的日志复制。该种情况下，是否会出现第一个问题中的场景呢？是有可能的，比如四个节点，每个分区中存在两个节点，包含 leader 的分区不会触发新的选举，但另外一个分区会发起多次的选举（或预选举），<strong>这种情况下，整个系统瘫痪，无法对外服务</strong>。</p>
 <br>
-<font color=red>对于第三个问题</font>，这种情况相对较简单，系统可正常对外服务，少数分区可能存在多次选举，但分区恢复后，可以开始正常的日志复制，具体过程在前两个问题中已经提及。
 
-<h2 id="Q4：leader-commit日志之前崩溃了，会发生什么？"><a href="#Q4：leader-commit日志之前崩溃了，会发生什么？" class="headerlink" title="Q4：leader commit日志之前崩溃了，会发生什么？"></a>Q4：leader commit日志之前崩溃了，会发生什么？</h2><p>该问题在 raft 论文中有论述，是关于如何处理前任 leader 复制的日志。<strong>我当时的疑问是</strong>：leader 将最新的日志复制到了一部分节点后，或许是还未满足大多数原则，或许是 commit 之前就崩溃了，这些最新的日志会被怎么处理？</p>
+<p><font color=red>对于第三个问题</font>，这种情况相对较简单，系统可正常对外服务，少数分区可能存在多次选举，但分区恢复后，可以开始正常的日志复制，具体过程在前两个问题中已经提及。</p>
+<h2 id="Q4：leader-commit-日志之前崩溃了，会发生什么？"><a href="#Q4：leader-commit-日志之前崩溃了，会发生什么？" class="headerlink" title="Q4：leader commit 日志之前崩溃了，会发生什么？"></a>Q4：leader commit 日志之前崩溃了，会发生什么？</h2><p>该问题在 raft 论文中有论述，是关于如何处理前任 leader 复制的日志。<strong>我当时的疑问是</strong>：leader 将最新的日志复制到了一部分节点后，或许是还未满足大多数原则，或许是 commit 之前就崩溃了，这些最新的日志会被怎么处理？</p>
 <p>后来再次仔细阅读论文，发现并理解了更加细微的点。借助论文中对该问题的讨论部分的图示，再来复盘一下：</p>
 <p><img src="/img/raft/Q4_1.png" srcset="/img/loading.gif" lazyload></p>
 <p>图中方块中的数字标识 Term，上方的数字标识 Index。</p>
-<ol>
+<ul>
 <li><p>(a)中，S1 为 Term2 的 leader，在将 Index&#x3D;2 的日志复制到 S2 后崩溃。</p>
 </li>
 <li><p>(b)中，S1 崩溃后，S5 在 Term3 当选 leader（根据选举限制，在最后一条日志中，S5 具有更大的 Term，所以能够当选）</p>
 </li>
 <li><p>(c)中，S5 崩溃，S1 在 Term4 当选 leader，并继续复制日志，此时它将 Index&#x3D;2 的日志成功复制到了大多数节点上，但还未提交。</p>
 </li>
-<li><p>(d1) 和 (d2) 描述两种情况：<br> 第一种是(d1)，以前任期复制的日志（未提交）被后面新的日志覆盖。客户端等待响应超时，会重新发起请求（我之前还在担心，这会不会造成数据丢失，太天真了）。对应的是 S1 再次崩溃，在 (c) 的局面下，S5 再次当选 leader（图中未画出新的任期，S5 可以获得 S2-4 的选票），由于复制日志以 leader 的日志为准，所以Index&#x3D;2的以前任期的日志会被 S5 的 Index&#x3D;2 的日志覆盖。</p>
-<p> 第二种是(d2)，以前任期复制的日志可以被后面新的 leader 提交（属于被动提交，因为 raft 中，提交一条日志，就表示该条日志之前的所有日志都已被提交）。对应的是，S1 在崩溃之前将日志复制到了大多数节点上，此时 S5 已经不可能再当选，新的 leader 只能在 S1-3 之中。假设，S1 未崩溃，那么，S1 通过提交 Index&#x3D;3 的日志，之前的日志也就一起被动提交了；就算 S1 在提交之前崩溃了，新的 leader 通过提交当前任期的日志也能提交以前任期的所有日志。</p>
+<li><p>(d1) 和 (d2) 描述两种情况：<br>  第一种是(d1)，以前任期复制的日志（未提交）被后面新的日志覆盖。客户端等待响应超时，会重新发起请求（我之前还在担心，这会不会造成数据丢失，太天真了）。对应的是 S1 再次崩溃，在 (c) 的局面下，S5 再次当选 leader（图中未画出新的任期，S5 可以获得 S2-4 的选票），由于复制日志以 leader 的日志为准，所以 Index&#x3D;2 的以前任期的日志会被 S5 的 Index&#x3D;2 的日志覆盖。</p>
+<p>  第二种是(d2)，以前任期复制的日志可以被后面新的 leader 提交（属于被动提交，因为 raft 中，提交一条日志，就表示该条日志之前的所有日志都已被提交）。对应的是，S1 在崩溃之前将日志复制到了大多数节点上，此时 S5 已经不可能再当选，新的 leader 只能在 S1-3 之中。假设，S1 未崩溃，那么，S1 通过提交 Index&#x3D;3 的日志，之前的日志也就一起被动提交了；就算 S1 在提交之前崩溃了，新的 leader 通过提交当前任期的日志也能提交以前任期的所有日志。</p>
 </li>
-</ol>
-<p><strong>从这里，应当认识到两点</strong>：<br>1）复制的日志可能会被覆盖，客户端会重试。<br>2）raft 算法中，leader 会强制要求其他节点的日志与自己一致，对安全性的考虑应该结合选举限制一起理解。</p>
+</ul>
+<p><strong>从这里，应当认识到两点</strong>：</p>
+<ul>
+<li>复制的日志可能会被覆盖，客户端会重试。</li>
+<li>raft 算法中，leader 会强制要求其他节点的日志与自己一致，对安全性的考虑应该结合选举限制一起理解。</li>
+</ul>
+<h2 id="Q5：Raft-成员变更过程如何理解？"><a href="#Q5：Raft-成员变更过程如何理解？" class="headerlink" title="Q5：Raft 成员变更过程如何理解？"></a>Q5：Raft 成员变更过程如何理解？</h2><p><font color=dark-green>Raft 成员变更（Cluster Membership Change）</font><br>raft 集群中的每一个节点都会记录集群节点的信息，即 peer 配置，如果节点发起选举或是 leader 复制日志都需要该配置，以便将请求发送给其他节点。<u>成员变更本质上就是 peer 配置的变化</u>：向集群中新增节点，就是向 peer 配置中新增节点信息；从集群中移除节点，就是从 peer 配置中删除节点信息。</p>
+<p>raft 博士毕业论文中设计了两种算法来处理成员变更：</p>
+<ul>
+<li>方法一：一次变更只包括一个节点加入集群或从集群中移除；</li>
+<li>方法二：一次变更包括多个节点加入集群或从集群中移除。</li>
+</ul>
+<p>由于对安全性的考虑，第二种方法会引入额外的复杂度，不如第一种简单，考虑如下情况（见下图）：<br><img src="/img/raft/Q5-1.png" srcset="/img/loading.gif" lazyload><br>当集群中成员发生变更时，该变更不可能同时应用在所以节点上，上图集群中有 3 个节点，现新增 2 个，在变更的过程中，有些节点更新了自己的 peer 配置，感知到的是 5 个节点，如 server 3，而其他节点可能还未得到更新，记录的仍是 3 个节点，如 server 1 和 server 2。<u>如果此时发生选举，就可能会选出两个 leader</u>：</p>
+<ul>
+<li>server 3：获得 server 3、4、5 的选票。</li>
+<li>server 1：获得 server 1、2 的选票。</li>
+</ul>
+<p>由于 server 1 的 peer 配置还未更新，认为集群中只有 3 个节点，那么它已经得到大多数的选票了，可以当选为 leader；而 server 3，根据它的 peer 配置同样也得到了大多数的选票，可以当选为 leader. 同时移除多个节点也会导致该问题。也就是说一次涉及多个节点加入或移除的变更是不安全的，不能保证唯一的 leader。</p>
+<p>为了解决这个问题（会产生两个大多数群体），第二种方法会引入一个过渡状态，被称为 joint consensus（共同一致），有时间再讨论这种方法。<font color=red>本节只讨论第一种方法</font>。</p>
+<p><u>为什么一次变更只包含一个节点的情况（方法一）不会引发上述问题呢？</u>考虑如下场景：<br><img src="/img/raft/Q5-2.png" srcset="/img/loading.gif" lazyload></p>
+<p><strong>如上图 case 1 所示（case 2 类似）</strong>，集群中刚开始有 A、B、C 三个节点，$T_0$ 时刻节点 D 加入了该集群。</p>
+<p>$T_1$ 时刻，节点 C 感知到新节点的加入，更新了 peer 配置，此时，集群分为了两部分：更新了 peer 的节点（C、D）和未更新 peer 的节点（A、B），但这并不会将集群分裂成两个大多数群体，C 或 D 要想当选 leader，至少需要 3 票（包含自身选票），A 或 B 要想当选，至少需要获得 2 两票（包含自身选票），但这两种情况不可能同时发生，前者的 3 票与后者的 2 票存在重合。</p>
+<p>$T_2$ 时刻，B 节点也感知到了新节点的加入，更新了 peer 配置，此时集群中依然存在两个部分：更新了 peer 的节点（B、C、D）和未更新 peer 的节点（A），这种情况下同样不会产生两个 leader.</p>
+<p>$T_3$ 时刻，A 节点也感知到了新节点，至此整个集群都完成了 peer 配置的更新。</p>
+<p><strong>再来看 case 4 所示（case 3 类似）</strong>，集群中刚开始有 A、B、C、D 四个节点，$T_0$ 时刻节点 D 被移除了该集群。</p>
+<p>$T_1$ 时刻，节点 C 感知到了节点的移除，更新了 peer 配置，此时集群分为两部分：更新了 peer 配置的节点（C）和未更新 peer 配置的节点（A、B），同样，如果此时需要选举 leader，不会产生两个，若 C 想要当选 leader，至少需要 2 票（包含自身选票），若 A 或 B 想要当选，至少需要 3 票（包含自身选票），前者的 2 票与后者的 3 票存在重合，不可能同时满足。</p>
+<p>$T_2$ 时刻，节点 B 感知到了节点的移除，更新了 peer 配置，虽然集群中还是存在两个部分，同样也不会产生两个 leader.</p>
+<p>$T_3$ 时刻，节点 A 也感知到了节点的移除，至此整个集群都完成了 peer 配置的更新。</p>
+<p><font color=red>因此，若一次变更只包含单个节点的加入或删除，那么不会造成集群的分裂，这种情况下变更是安全的。</font></p>
+<br>
 
+<p><strong>如果存在多个节点需要加入或删除怎么办？</strong></p>
+<p>论文指出，对于这种情况，可以一次一个节点地变更。由上面的讨论可知，若一次变更只涉及一个节点，那么当其他节点感知到变更时，就可以更新并应用新的 peer 配置，并且不会产生安全性问题。下面是论文描述的单个节点的变更过程：</p>
+<blockquote>
+<ul>
+<li>leader 接收到成员变更请求（一种特殊的 entry：$C_{new}$）后，将该 entry 存在日志中，并应用该配置，同时将 $C_{new}$ 复制给其他 follower 节点。</li>
+<li>follower 节点收到 $C_{new}$ 后，同样存入日志中，并应用该新配置。</li>
+<li>当一个节点（candidate 或 leader）需要给其他所有节点发送请求时，使用的是从日志中检索到的最新的配置。</li>
+<li>当 $C_{new}$ 在所有节点中达成一致后被提交，此次变更就完成了，leader 反馈变更成功，可以开始下一次的变更。</li>
+</ul>
+</blockquote>
+<p>上述过程其实和普通的 raft 过程没什么区别，主要的不同在与配置是即时生效的。<u>这里有一个隐藏的细节</u>：在 $C_{new}$ 复制的过程中（还未提交），若 leader 崩了，新的 leader 选了出来（Q4 描述的场景），那么 $C_{new}$ 就有可能会被丢弃，当然节点变更也就失败了，最后会超时重试。事实上，我在做 TinyKV 项目时发现，$C_{new}$ 并不是即时生效的，而是上层模块处理 committedEntries 时若发现 $C_{new}$ 被提交了，才会更新节点的配置。</p>
+<h2 id="Q6：如何提升成员变更中的集群可用性？"><a href="#Q6：如何提升成员变更中的集群可用性？" class="headerlink" title="Q6：如何提升成员变更中的集群可用性？"></a>Q6：如何提升成员变更中的集群可用性？</h2><p>要想解答问题首先得了解问题，成员变更过程中集群的可用性为何会受影响？分为三个部分：</p>
+<ol>
+<li><u>新加入一个节点到集群中时</u>，该新节点的日志大概率非常落后于 leader（甚至为空），在追赶上（catch up）leader 之前，这个新节点不能参与任何新日志提交的决策，甚至是拖累。比如一个初始有 3 个节点的集群新加入了一个节点，在新节点追赶的过程中，初始 3 个节点中的某个节点崩溃下线了，那么该集群在一段时间内都处于不可用（无法提交任何新的日志），因为达成一致需要大多数节点（$\frac{3}{4}$）成功复制了该日志条目，而新节点还在追赶中。</li>
+<li><u>当 leader 节点收到移除自己的请求时</u>。论文中到了该问题（因为 Q5 中方法二需要处理该问题），其实不算一个大问题，解决方法很多，后面会提到。</li>
+<li><u>被移除的节点可能会发起选举干扰集群的正常流程</u>。当 leader 收到移除某个节点的请求后，leader 不再给被移除的节点发送任何日志（包括移除请求日志 $C_{new}$），同样也不会发送心跳包。被移除的节点感到很无辜啊，它并不知道自己已经不属于该集群了，所以等待它的比如是超时，它自然会发起选举请求，也就干扰到了集群。</li>
+</ol>
+<p><font color=red>对于第一个问题</font>，解决方法很简单，新节点刚开始加入时，将其当作 non-voter，即不被算作大多数，当其追赶上 leader 的日志后，由 leader 再一次的将其作为正式成员加入到集群中。</p>
+<p>还有一个问题需要解决：<u>如何定义“追赶上”？</u>当新节点还在复制日志时，新的日志又会到达 leader，如果是完全相同，基本不可能。细想一下，新节点加入集群影响可用性主要是因为它需要较长的时间复制日志，那如果这个时间比较短，对可用性的影响自然就可以接受，论文中建议这个时间低于 election timeout，所以当新节点与 leader 的日志差距小到复制的时间开销低于 election timeout，那么就可以将其正式加入集群了。<u>具体算法是这样的</u>：</p>
+<blockquote>
+<p>新节点从 leader 处复制日志被划分为多个 round. 在每个 round 中复制 leader 在该次 round 开始时具有的所有日志，复制过程中新到达的日志会在下一个 round 中复制。leader 可能会等待几个 round（比如 10），若最后一次 round 所花费的时间少于 election timeout，那么 leader 就可以将该新节点正式加入集群中。<br>如果新节点出问题了，或者太慢了（无论是哪种都会超时），那么 leader 会主动中止本次成员更改，返回失败，后面节点可以继续请求加入，这时，它已经具有一部分日志了，成功的概率大大地增加。</p>
+</blockquote>
+<br>
+
+<p><font color=red>对于第二个问题</font>，有两种方法可以解决：</p>
+<ol>
+<li>如 Q5 中提到的，可以在该 $C_{new}$ 提交后再应用新的配置。但需要注意一点，当 leader 接受到移除自己的请求 $C_{new}$ 后，leader 不应该参与任何日志的提交决策，即统计大多数时不应该算上自己，比如集群中只有两个节点时，当 leader 提交 $C_{new}$ 后移除自己，另外一个节点很可能根本没有复制 $C_{new}$，集群就陷入不可用状态了。</li>
+<li>使用 Q7 中提到的 leadership transfer.</li>
+</ol>
+<br>
+
+<p><font color=red>对于第三个问题</font>，粗看起来有点像 Q3 的问题一，采用 PreVote 优化就能解决。实际中，很有可能当一个节点被移除后超时发起选举时，在大多数节点中它依然具有较新的日志，也就是它依然能够当选 leader. 有意思的事情发生了，被移除的节点居然还能自己回归（当然移除节点请求会超时返回失败，稍后可能会重试）。如果移除请求会不停重试，该节点始终会被移除集群，然而这个过程就耗费了太多时间，而且旧 leader 的一些日志还可能会被覆盖，导致客户端请求超时失败。</p>
+<p>PreVote 能够阻止部分的干扰，但显然还不够，<u>因此 raft 引入了租期（Lease）的概念</u>：如果一个 follower 能够在 election timeout 时间内收到 leader 的信息（AppendEntries 或 HeartBeat），则该 follower 处在租期内。当一个 follower 收到一个选举投票请求时，如该 follower 还处在租期内，那么 follower 会拒绝或者直接忽视该投票请求。</p>
+<p>下面代码是 etcd 对 Lease 的实现。引入上面的方法后，尽管被移除的节点在大多数节点中具有较新的日志，只要 leader 正常工作，被移除的节点就不可能当选，自然也就不会干扰到集群。然而，Lease 可能会影响 Q7 中的 leadership transfer，所以代码中有一个特殊的变量 force，来判断是不是处于 leadership transfer.</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><code class="hljs golang"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(r *raft)</span></span> Step(m pb.Message) <span class="hljs-type">error</span> &#123;<br>	<span class="hljs-comment">// Handle the message term, which may result in our stepping down to a follower.</span><br>	<span class="hljs-keyword">switch</span> &#123;<br>	<span class="hljs-keyword">case</span> m.Term == <span class="hljs-number">0</span>:<br>		<span class="hljs-comment">// local message</span><br>	<span class="hljs-keyword">case</span> m.Term &gt; r.Term:<br>		<span class="hljs-keyword">if</span> m.Type == pb.MsgVote || m.Type == pb.MsgPreVote &#123;<br>			force := bytes.Equal(m.Context, []<span class="hljs-type">byte</span>(campaignTransfer))<br>			inLease := r.checkQuorum &amp;&amp; r.lead != None &amp;&amp;<br>                       r.electionElapsed &lt; r.electionTimeout<br>			<span class="hljs-keyword">if</span> !force &amp;&amp; inLease &#123;<br>				<span class="hljs-comment">// If a server receives a RequestVote request within the minimum election timeout</span><br>				<span class="hljs-comment">// of hearing from a current leader, it does not update its term or grant its vote</span><br>				r.logger.Infof(<span class="hljs-string">&quot;%x [logterm: %d, index: %d, vote: %x] ignored %s from %x [logterm: %d,</span><br><span class="hljs-string">                index: %d] at term %d: lease is not expired (remaining ticks: %d)&quot;</span>,<br>					r.id, r.raftLog.lastTerm(), r.raftLog.lastIndex(), r.Vote, m.Type, m.From, m.LogTerm,<br>                    m.Index, r.Term, r.electionTimeout-r.electionElapsed)<br>				<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>			&#125;<br>            <span class="hljs-comment">// ...</span><br>		&#125;<br>        <span class="hljs-comment">// ...</span><br>    &#125;<br>    <span class="hljs-comment">// ...</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>其实这里我有个疑问</strong>：实现 Lease 后，岂不是会增加正常选举的时长？假设某时刻 leader 维修下线了，一段时间后，某个 follower 率先超时向其他所有发送选举请求，由于其他节点都还未超时（还在租期内），该 follower 一定不会当选，且只有当集群中超过半数的节点都超时后才可能会有 leader 产生。</p>
+<h2 id="Q7：Leadership-Transfer-过程是怎样的？"><a href="#Q7：Leadership-Transfer-过程是怎样的？" class="headerlink" title="Q7：Leadership Transfer 过程是怎样的？"></a>Q7：Leadership Transfer 过程是怎样的？</h2>
               
             </div>
             <hr/>
@@ -454,21 +536,20 @@
             
   <article id="comments" lazyload>
     
-  <div id="waline"></div>
+  <div id="valine"></div>
   <script type="text/javascript">
-    Fluid.utils.loadComments('#waline', function() {
-      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.5.1/waline.min.css')
-      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.5.1/waline.min.js', function() {
+    Fluid.utils.loadComments('#valine', function() {
+      Fluid.utils.createScript('https://lib.baomitu.com/valine/1.5.0/Valine.min.js', function() {
         var options = Object.assign(
-          {"serverURL":"https://mdz4rpgi.lc-cn-n1-shared.com","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10},
+          {"appId":"LNOx2vLkIuWg9k1cy08Is3vl-MdYXbMMI","appKey":"zzkSgrAk6AEncP4gqAbFFQRR","path":"window.location.pathname","placeholder":"吐槽一下","avatar":"retro","meta":["nick","mail","link"],"requiredFields":[],"pageSize":10,"lang":"zh-CN","highlight":false,"recordIP":false,"serverURLs":"","emojiCDN":"https://img.t.sinajs.cn/t4/appstyle/expression/ext/normal/","emojiMaps":null,"enableQQ":false},
           {
-            el: '#waline',
+            el: "#valine",
             path: window.location.pathname
           }
         )
-        Waline.init(options);
-        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
-          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+        new Valine(options);
+        Fluid.utils.waitElementVisible('#valine .vcontent', () => {
+          var imgSelector = '#valine .vcontent img:not(.vemoji)';
           Fluid.plugins.imageCaption(imgSelector);
           Fluid.plugins.fancyBox(imgSelector);
         })

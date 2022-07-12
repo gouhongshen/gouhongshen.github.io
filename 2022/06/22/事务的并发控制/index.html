@@ -28,7 +28,7 @@
 <meta property="og:image" content="http://example.com/img/concurrency-control/snapshot-isolation-1.jpg">
 <meta property="og:image" content="http://example.com/img/concurrency-control/snapshot-isolation-2.jpg">
 <meta property="article:published_time" content="2022-06-22T08:29:21.000Z">
-<meta property="article:modified_time" content="2022-06-26T06:36:10.954Z">
+<meta property="article:modified_time" content="2022-07-12T01:21:31.300Z">
 <meta property="article:author" content="gouhongshen">
 <meta property="article:tag" content="事务">
 <meta property="article:tag" content="mvcc">
@@ -81,7 +81,7 @@
   <script id="fluid-configs">
     var Fluid = window.Fluid || {};
     Fluid.ctx = Object.assign({}, Fluid.ctx)
-    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.1","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"LNOx2vLkIuWg9k1cy08Is3vl-MdYXbMMI","app_key":"zzkSgrAk6AEncP4gqAbFFQRR","server_url":"https://lnox2vlk.api.lncldglobal.com","path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.1","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"LNOx2vLkIuWg9k1cy08Is3vl-MdYXbMMI","app_key":"zzkSgrAk6AEncP4gqAbFFQRR","server_url":null,"path":"window.location.pathname","ignore_local":true}},"search_path":"/local-search.xml"};
 
     if (CONFIG.web_analytics.follow_dnt) {
       var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
@@ -229,7 +229,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          5.8k 字
+          5.9k 字
         
       </span>
     
@@ -240,7 +240,7 @@
         
         
         
-          65 分钟
+          66 分钟
         
       </span>
     
@@ -383,23 +383,32 @@
 <li><u>commitTS</u>. 在事务准备写入更新到数据库的时间（或者是开始验证阶段的时间）</li>
 </ul>
 <p>每个被更新的数据都带有一个时间戳（即数据的版本号），即执行该更新事务的 commitTS，也就是说同一份数据可能存在多个版本。时间可以是系统时间，也可以是逻辑时间（计数器），只要保证不会存在相同的时间戳即可。</p>
-<p>当一个事务 TA 读取一个数据时，读取到的数据具有这样的特点：在所有版本号小于等于 startTS(TA) 的数据中具有最大的版本号。从事务角度理解，一个事务看不到，任何在该事务开始之后提交的事务所作的更新。</p>
+<p>当一个事务 TA 读取一个数据时，读取到的数据具有这样的特点：在所有版本号小于等于 startTS(TA) 的数据中具有<strong>最大的版本号</strong>。从事务角度理解，一个事务看不到，任何在该事务开始之后提交的事务所作的更新。</p>
 <br>
 
-<p><font color=dark-green>更新验证阶段</font><br>按照上面所说，事务读取数据后各自操作，其他事务感知不到，那么就可能会出现两个并发的事务读取了同一个数据的同一个版本，那么在更新时就会产生冲突，如果不做限制，就会发生更新丢失（lost update）。如何解决冲突，是验证阶段的工作。</p>
+<p><font color=dark-green>更新验证阶段</font><br>按照上面所说，事务读取数据后各自操作，其他事务感知不到，那么就可能会出现两个并发的事务更新同一个数据，如果允许这两个事务都修改数据库，那么就会发生值覆盖，也就是更新丢失（lost update）。如何解决冲突，是验证阶段的工作。</p>
 <p>一般有两种方法可以防止更新丢失，介绍之前先看一下 snapshot isolation 中的并发定义，当下面情况中任一发生时，就说事务 TA 和 TB 并发：</p>
 <ul>
 <li>startTS(TA) &lt;&#x3D; startTS(TB) &lt;&#x3D; commitTS(TA)</li>
 <li>startTS(TB) &lt;&#x3D; startTS(TA) &lt;&#x3D; commitTS(TB)</li>
 </ul>
-<p><strong>第一种方法称为 first committer wins</strong>. 假设同一时间只有一个事务在验证。当事务 TA 准备写入更新时，执行如下步骤：<br><u>1.检测是否存在冲突</u>。检查 TA 更新的每一个数据，看是某个数据否存在一个版本号落在 [startTS(TA), commitTS(TA)].<br><u>2.若有</u>，则 TA abort.<br><u>3.若无</u>，正常写入更新和后续步骤，比如提交。</p>
-<p><strong>第二种方法称为 first updater wins</strong>. 该方法会应用到锁机制，当 TA 准备写入更新时，会申请需要写入数据的写锁，根据锁是否申请成功，有两种情况：<br><u>写锁申请成功</u>，若当前数据已经被并发的事务更新了（检测方法同上），则 TA abort，否则执行正常的写入更新和后续步骤，比如提交。<br><u>写锁申请失败</u>，假如该锁被 TB 占有，TA 等待 TB abort 或者 commit。若 TB abort，TA 获取到该锁，后续操作同上一种情况。若 TB commit，那么 TA 只能 abort.</p>
+<p><strong>第一种方法称为 first committer wins</strong>. 假设同一时间只有一个事务在验证。当事务 TA 准备写入更新时，执行如下步骤：</p>
+<ol>
+<li><u>检测是否存在冲突</u>。检查 TA 更新的每一个数据，看是某个数据否存在一个版本号落在 [startTS(TA), commitTS(TA)].</li>
+<li><u>若有</u>，则 TA abort.</li>
+<li><u>若无</u>，正常写入更新和后续步骤，比如提交。</li>
+</ol>
+<p><strong>第二种方法称为 first updater wins</strong>. 该方法会应用到锁机制，当 TA 准备写入更新时，会申请需要写入数据的写锁，根据锁是否申请成功，有两种情况：</p>
+<ul>
+<li><u>写锁申请成功</u>，若当前数据已经被并发的事务更新了（检测方法同上），则 TA abort，否则执行正常的写入更新和后续步骤，比如提交。</li>
+<li><u>写锁申请失败</u>，假如该锁被 TB 占有，TA 等待 TB abort 或者 commit。若 TB abort，TA 获取到该锁，后续操作同上一种情况。若 TB commit，那么 TA 只能 abort.</li>
+</ul>
 <br>
 
 <p><font color=dark-green>Snapshot Isolation 问题与解决</font><br>snapshot isolation 吸入的地方在于，读写分离，互不干扰。<strong>但它有一个致命的缺陷：不保证可串行化（serializability）</strong>，如下例子：<br><img src="/img/concurrency-control/snapshot-isolation-1.jpg" srcset="/img/loading.gif" lazyload></p>
 <p>如果构造该例子的先行图，会发现存在环：该调度非冲突可串行化。在两阶段加锁协议中该调度会产生死锁，不可能顺利执行下去。然而，在快照隔离策略中却可以执行、提交。如果这两个事务以可串行化的调度方案并发，那么 A、B 的值是一样的，具体的值取决于谁先执行，而快照隔离的结果却是将它们的值交换。</p>
 <p><strong>这种现象被称为写偏斜（write skew）</strong>：两个事务读取了对方会更新的数据，但这两个事务更新的数据却没有交集，如 Ti 读取了会被 Tj 更新的 B，Tj 读取了会被 Ti 更新的 A，而它们分别更新 A 和 B，没有交集，所以在验证阶段无法被检测出来。</p>
-<p>发生写偏斜的根本原因是什么？借助上面例子可以发现，发生写偏斜时，调度方案的先行图存在两条 read-write 冲突边，一条入边，一条出边：对于事务 Ti 写入了 A 的一个新版本，而 Tj 读取了 A 之前的一个版本（Tj -&gt; Ti, read-write edge）；对于事务 Tj 写入了 B 的一个新版本，而 Ti 读取了 B 之前的一个版本（Ti -&gt; Tj, read-write edge）：<br><img src="/img/concurrency-control/snapshot-isolation-2.jpg" srcset="/img/loading.gif" lazyload></p>
+<p><font color=red>发生写偏斜的根本原因是什么？snapshot isolation 不能有效追踪防止 read-write conflict，验证阶段的连个方法都只限制了 write-write conflict</font>. 借助上面例子可以发现，发生写偏斜时，调度方案的先行图存在两条 read-write 冲突边，一条入边，一条出边：对于事务 Ti 写入了 A 的一个新版本，而 Tj 读取了 A 之前的一个版本（Tj -&gt; Ti, read-write edge）；对于事务 Tj 写入了 B 的一个新版本，而 Ti 读取了 B 之前的一个版本（Ti -&gt; Tj, read-write edge）：<br><img src="/img/concurrency-control/snapshot-isolation-2.jpg" srcset="/img/loading.gif" lazyload></p>
 <p><strong>由此，一种新的技术称为 Serializable Snapshot Isolation(SSI) 被提出以保证快照隔离可串行化</strong>。SSI 会追踪并发事务之间的所有 read-write 冲突，检查是否同时存在出边和入边，如果存在，则其中一个事务会被回滚。</p>
 <p>趁热打铁读一读 snapshot isolation 的工业级实现：<a href="/2022/06/18/Percolator-%E9%9A%8F%E7%AC%94/" title="事务篇六：Percolator 随笔">事务篇六：Percolator 随笔</a>呀。</p>
 <h2 id="隔离级别的实现"><a href="#隔离级别的实现" class="headerlink" title="隔离级别的实现"></a>隔离级别的实现</h2><p><font color=dark-green>如何实现读已提交级别？</font><br>读已提交有如下特点：</p>
@@ -578,21 +587,20 @@
             
   <article id="comments" lazyload>
     
-  <div id="waline"></div>
+  <div id="valine"></div>
   <script type="text/javascript">
-    Fluid.utils.loadComments('#waline', function() {
-      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.5.1/waline.min.css')
-      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.5.1/waline.min.js', function() {
+    Fluid.utils.loadComments('#valine', function() {
+      Fluid.utils.createScript('https://lib.baomitu.com/valine/1.5.0/Valine.min.js', function() {
         var options = Object.assign(
-          {"serverURL":"https://mdz4rpgi.lc-cn-n1-shared.com","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10},
+          {"appId":"LNOx2vLkIuWg9k1cy08Is3vl-MdYXbMMI","appKey":"zzkSgrAk6AEncP4gqAbFFQRR","path":"window.location.pathname","placeholder":"吐槽一下","avatar":"retro","meta":["nick","mail","link"],"requiredFields":[],"pageSize":10,"lang":"zh-CN","highlight":false,"recordIP":false,"serverURLs":"","emojiCDN":"https://img.t.sinajs.cn/t4/appstyle/expression/ext/normal/","emojiMaps":null,"enableQQ":false},
           {
-            el: '#waline',
+            el: "#valine",
             path: window.location.pathname
           }
         )
-        Waline.init(options);
-        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
-          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+        new Valine(options);
+        Fluid.utils.waitElementVisible('#valine .vcontent', () => {
+          var imgSelector = '#valine .vcontent img:not(.vemoji)';
           Fluid.plugins.imageCaption(imgSelector);
           Fluid.plugins.fancyBox(imgSelector);
         })
