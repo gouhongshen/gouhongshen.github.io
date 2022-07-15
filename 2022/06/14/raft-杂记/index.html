@@ -16,19 +16,20 @@
   <meta name="author" content="gouhongshen">
   <meta name="keywords" content="">
   
-    <meta name="description" content="前言前段时间学习了 CMU-15445 的课程，也写完了 project，了解了数据库内核的基本知识。这段时间在做 TinyKV，刚好看了 raft，细节很多，所以来总结下。 关于 raft 网上有很多资料：raft 小论文raft 博士论文raft 博客etcd raft 实现 所以，这里并不是对 raft 算法本身的细节记录（可能存在部分），而是自己阅读、实现时的一些疑问和解答。 Q0: ra">
+    <meta name="description" content="前言前段时间学习了 CMU-15445 的课程，也写完了 project，了解了数据库内核的基本知识。这段时间在做 TinyKV，刚好看了 raft，细节很多，所以来总结下。 关于 raft 网上有很多资料：raft 小论文raft 博士论文raft 博客etcd raft 实现 所以，这里并不是对 raft 算法本身的细节记录（可能存在部分），而是自己阅读、实现时的一些疑问和解答。 看完 raf">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Raft 算法问答录">
 <meta property="og:url" content="http://example.com/2022/06/14/raft-%E6%9D%82%E8%AE%B0/index.html">
 <meta property="og:site_name" content="Gou&#39;s Blog">
-<meta property="og:description" content="前言前段时间学习了 CMU-15445 的课程，也写完了 project，了解了数据库内核的基本知识。这段时间在做 TinyKV，刚好看了 raft，细节很多，所以来总结下。 关于 raft 网上有很多资料：raft 小论文raft 博士论文raft 博客etcd raft 实现 所以，这里并不是对 raft 算法本身的细节记录（可能存在部分），而是自己阅读、实现时的一些疑问和解答。 Q0: ra">
+<meta property="og:description" content="前言前段时间学习了 CMU-15445 的课程，也写完了 project，了解了数据库内核的基本知识。这段时间在做 TinyKV，刚好看了 raft，细节很多，所以来总结下。 关于 raft 网上有很多资料：raft 小论文raft 博士论文raft 博客etcd raft 实现 所以，这里并不是对 raft 算法本身的细节记录（可能存在部分），而是自己阅读、实现时的一些疑问和解答。 看完 raf">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://example.com/img/raft/rsm.png">
 <meta property="og:image" content="http://example.com/img/raft/Q4_1.png">
 <meta property="og:image" content="http://example.com/img/raft/Q5-1.png">
 <meta property="og:image" content="http://example.com/img/raft/Q5-2.png">
+<meta property="og:image" content="http://example.com/img/raft/Q8-1.png">
 <meta property="article:published_time" content="2022-06-14T11:31:45.000Z">
-<meta property="article:modified_time" content="2022-07-12T11:23:49.091Z">
+<meta property="article:modified_time" content="2022-07-14T04:19:52.187Z">
 <meta property="article:author" content="gouhongshen">
 <meta property="article:tag" content="raft">
 <meta property="article:tag" content="分布式一致性协议">
@@ -227,7 +228,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          8.8k 字
+          12k 字
         
       </span>
     
@@ -238,7 +239,7 @@
         
         
         
-          99 分钟
+          131 分钟
         
       </span>
     
@@ -291,6 +292,7 @@
               <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前段时间学习了 CMU-15445 的课程，也写完了 project，了解了数据库内核的基本知识。这段时间在做 TinyKV，刚好看了 raft，细节很多，所以来总结下。</p>
 <p>关于 raft 网上有很多资料：<br><a target="_blank" rel="noopener" href="https://raft.github.io/raft.pdf">raft 小论文</a><br><a target="_blank" rel="noopener" href="http://files.catwell.info/misc/mirror/2014-ongaro-raft-phd.pdf">raft 博士论文</a><br><a target="_blank" rel="noopener" href="https://tanxinyu.work/raft/">raft 博客</a><br><a target="_blank" rel="noopener" href="https://www.codedump.info/post/20180922-etcd-raft/">etcd raft 实现</a></p>
 <p>所以，这里并不是对 raft 算法本身的细节记录（可能存在部分），而是自己阅读、实现时的一些疑问和解答。</p>
+<p><u>看完 raft 小论文后，强烈推荐阅读 raft 博士论文（虽然 258 页）</u>，因为它会结合工业实现阐述遇到的问题和解决方式，里面包含了很多细微的点，是一份能大致了解分布式系统的资料。本文绝大多数内容来自这篇博士论文。</p>
 <h2 id="Q0-raft-算法有哪些优化？"><a href="#Q0-raft-算法有哪些优化？" class="headerlink" title="Q0: raft 算法有哪些优化？"></a>Q0: raft 算法有哪些优化？</h2><ol>
 <li>PreVote 见 Q3.</li>
 <li>Lease 见 Q6.</li>
@@ -308,16 +310,16 @@
 <p>要解答这些问题，需要借助现有的成熟的工业系统，比如 etcd、tikv 等等，因为比较熟悉 TinyKV，所以以它为例。</p>
 <p>TinyKV 的设计参照了 etcd，将 raft 模块设计成独立的部分，raft 需要的网络、存储服务由上层（非 raft)提供，比较具有灵活性，具体流程如下：</p>
 <ul>
-<li>客户端向节点发送请求（put&#x2F;get&#x2F;delete…)</li>
+<li>客户端向节点发送请求（commands：put&#x2F;get&#x2F;delete…)</li>
 <li>节点准备 WAL(write-ahead-log)</li>
-<li>节点将请求封装成 entry 发送给 raft 模块</li>
-<li>节点获取 raft 算法的输出，主要有以下部分：<ul>
+<li>节点将 commands 封装成 entry 发送给 raft 模块，开始执行共识协议。</li>
+<li>某个时间点，节点获取 raft 算法的输出，主要有以下部分：<ul>
 <li>raft 需要存储的日志记录（unstable entry 和一些 raft 自身状态信息）</li>
 <li>committed entry（已经在大多数节点间达成一致的 entry）</li>
 <li>messages，需要发往其他 raft 模块的消息</li>
 </ul>
 </li>
-<li>节点获取到 raft 的输出后，按其类型做一些操作，对于 unstable entry 和状态信息，执行持久化操作；对于 committed entry，它们已处于安全状态，可以应用于数据库了，并且可以就这些 entry 中的请求向客户端反馈成功；对于messages，将其发送到对应的 raft 模块。完成以上操作后，通知 raft 模块。</li>
+<li>当上层模块获取到 raft 的输出后，按其类型做一些操作，对于 unstable entry 和状态信息，执行持久化操作；对于 committed entry，它们已处于安全状态，可以应用其中的 commands 于数据库了，并且可以就这些 commands（请求）向客户端反馈成功；对于messages，将其发送到对应的 raft 模块。完成以上操作后，通知 raft 模块。</li>
 </ul>
 <p><u>为什么 raft 会存储 unstable entry 和状态信息，比如 peers，是为了从崩溃中恢复</u></p>
 <p><strong>总结一下</strong>，raft 模块被独立实现，其算法输入来自上层（这里的输入可能是客户端请求，也可能是其他 raft 模块的消息），其算法输出由上层负责处理（存储、发送等），从这里也能知道，raft 根本不关心 entry 中的具体请求，那是上层逻辑的责任，它只需要采取办法能够唯一标识一条 entry 即可（Term、Index）。</p>
@@ -419,11 +421,44 @@
 
 <p><font color=red>对于第三个问题</font>，粗看起来有点像 Q3 的问题一，采用 PreVote 优化就能解决。实际中，很有可能当一个节点被移除后超时发起选举时，在大多数节点中它依然具有较新的日志，也就是它依然能够当选 leader. 有意思的事情发生了，被移除的节点居然还能自己回归（当然移除节点请求会超时返回失败，稍后可能会重试）。如果移除请求会不停重试，该节点始终会被移除集群，然而这个过程就耗费了太多时间，而且旧 leader 的一些日志还可能会被覆盖，导致客户端请求超时失败。</p>
 <p>PreVote 能够阻止部分的干扰，但显然还不够，<u>因此 raft 引入了租期（Lease）的概念</u>：如果一个 follower 能够在 election timeout 时间内收到 leader 的信息（AppendEntries 或 HeartBeat），则该 follower 处在租期内。当一个 follower 收到一个选举投票请求时，如该 follower 还处在租期内，那么 follower 会拒绝或者直接忽视该投票请求。</p>
-<p>下面代码是 etcd 对 Lease 的实现。引入上面的方法后，尽管被移除的节点在大多数节点中具有较新的日志，只要 leader 正常工作，被移除的节点就不可能当选，自然也就不会干扰到集群。然而，Lease 可能会影响 Q7 中的 leadership transfer，所以代码中有一个特殊的变量 force，来判断是不是处于 leadership transfer.</p>
+<p>下面代码是 etcd 对 Lease 的实现。引入上面的方法后，尽管被移除的节点在大多数节点中具有较新的日志，只要 leader 正常工作，被移除的节点就不可能当选，自然也就不会干扰到集群。然而，<u>Lease 可能会影响 Q7 中的 leadership transfer</u>，所以代码中有一个特殊的变量 force，来判断是不是处于 leadership transfer.</p>
 <figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><code class="hljs golang"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(r *raft)</span></span> Step(m pb.Message) <span class="hljs-type">error</span> &#123;<br>	<span class="hljs-comment">// Handle the message term, which may result in our stepping down to a follower.</span><br>	<span class="hljs-keyword">switch</span> &#123;<br>	<span class="hljs-keyword">case</span> m.Term == <span class="hljs-number">0</span>:<br>		<span class="hljs-comment">// local message</span><br>	<span class="hljs-keyword">case</span> m.Term &gt; r.Term:<br>		<span class="hljs-keyword">if</span> m.Type == pb.MsgVote || m.Type == pb.MsgPreVote &#123;<br>			force := bytes.Equal(m.Context, []<span class="hljs-type">byte</span>(campaignTransfer))<br>			inLease := r.checkQuorum &amp;&amp; r.lead != None &amp;&amp;<br>                       r.electionElapsed &lt; r.electionTimeout<br>			<span class="hljs-keyword">if</span> !force &amp;&amp; inLease &#123;<br>				<span class="hljs-comment">// If a server receives a RequestVote request within the minimum election timeout</span><br>				<span class="hljs-comment">// of hearing from a current leader, it does not update its term or grant its vote</span><br>				r.logger.Infof(<span class="hljs-string">&quot;%x [logterm: %d, index: %d, vote: %x] ignored %s from %x [logterm: %d,</span><br><span class="hljs-string">                index: %d] at term %d: lease is not expired (remaining ticks: %d)&quot;</span>,<br>					r.id, r.raftLog.lastTerm(), r.raftLog.lastIndex(), r.Vote, m.Type, m.From, m.LogTerm,<br>                    m.Index, r.Term, r.electionTimeout-r.electionElapsed)<br>				<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>			&#125;<br>            <span class="hljs-comment">// ...</span><br>		&#125;<br>        <span class="hljs-comment">// ...</span><br>    &#125;<br>    <span class="hljs-comment">// ...</span><br>&#125;<br></code></pre></td></tr></table></figure>
 
 <p><strong>其实这里我有个疑问</strong>：实现 Lease 后，岂不是会增加正常选举的时长？假设某时刻 leader 维修下线了，一段时间后，某个 follower 率先超时向其他所有发送选举请求，由于其他节点都还未超时（还在租期内），该 follower 一定不会当选，且只有当集群中超过半数的节点都超时后才可能会有 leader 产生。</p>
-<h2 id="Q7：Leadership-Transfer-过程是怎样的？"><a href="#Q7：Leadership-Transfer-过程是怎样的？" class="headerlink" title="Q7：Leadership Transfer 过程是怎样的？"></a>Q7：Leadership Transfer 过程是怎样的？</h2>
+<h2 id="Q7：Leadership-Transfer-过程是怎样的？"><a href="#Q7：Leadership-Transfer-过程是怎样的？" class="headerlink" title="Q7：Leadership Transfer 过程是怎样的？"></a>Q7：Leadership Transfer 过程是怎样的？</h2><p>raft 通过该过程，允许一个节点将其 leader 的身份移交给另外一个节点，<u>移交 leadership 在以下两个场景中很有用</u>：</p>
+<ul>
+<li>当前 leader 节点需要下线。leader 节点可能需要下线维护或集群移除了该 leader 节点。无论是哪一种，当 leader 节点下线后，集群必须等待一段时间后才能选举出新的 leader，对外提供服务，采用 leadership transfer 就可能避免等待这样一段时间。</li>
+<li>节点不适合继续承担 leader 角色（或有更好的选择）。一直处于高负载的节点不适合做 leader，原理 datacenter 的节点也不太适合做 leader…可以通过 leadership transfer 将 leadership 身份移交给合适的节点。</li>
+</ul>
+<p>结合 raft 协议的基本流程可知，要想将 leader 身份转移给另外一个节点，<u>需要保证两点</u>：1) 这个节点有足够新的日志（至少在大多数节点中较新），2) 该节点还得率先发起选举。raft 通过以下步骤保证这两点：</p>
+<ol>
+<li>当前 leader 停止接受新的客户端请求。</li>
+<li>当前 leader 通过常规的日志复制，将其日志全部复制到候选节点，使其具有最新的日志记录。</li>
+<li>上述步骤完成后，当前 leader 发送 TimeoutNow 请求给候选节点，候选节点收到后发起选举（不用等待 election timeout）。<u>这里与 Q6 中的 Lease 机制有冲突</u>，需要在投票请求中添加一个字段，暗示这样的选举是合法的。</li>
+</ol>
+<p>当前 leader 收到候选节点的投票请求时，当前 leader 就会变成 follower（步骤 1 和 2 能保证这一点），此时他就可以下线了，transfer 过程就完成了。这个过程当然可能出问题，下面是论文中关于异常的叙述：</p>
+<blockquote>
+<p>It is also possible for the target server to fail; in this case, the cluster must resume client operations. If leadership transfer does not complete after about an election timeout, the prior leader aborts the transfer and resumes accepting client requests. If the prior leader was mistaken and the target server is actually operational, then at worst this mistake will result in an extra election, after which client operations will be restored.</p>
+</blockquote>
+<p><strong>我当然又有问题了</strong>，步骤 1 很明显会导致集群一段时间内不可用，transfer 带来的好处能不能抵消这个缺点？？？但是论文中说他们还没有测试过…</p>
+<h2 id="Q8：Raft-之外的一致性问题？"><a href="#Q8：Raft-之外的一致性问题？" class="headerlink" title="Q8：Raft 之外的一致性问题？"></a>Q8：Raft 之外的一致性问题？</h2><p>如 Q2 中所说，leader 节点收到来自客户端的请求（command）后会将它们封装为 entry，然后 propose 给 raft 模块开始共识协议，当 entry 达成一致被提交后，上层模块就会将其中的 command 应用到数据库（复制状态机）中，至此，raft 协议就应该结束了，分布式节点（应该是大多数节点）的状态都达到了一致。</p>
+<p>当上层模块将 command 应用后，应该就该请求反馈客户端，<u>如果节点在回复客户端前崩溃了</u>，那么客户端很可能会超时重试，意味着相同的请求会再次被提交和应用，这种现象被称为 at-least-once semantics，会导致不正确的结果和不一致的状态。如下图。<br><img src="/img/raft/Q8-1.png" srcset="/img/loading.gif" lazyload><br>这里不能简单的通过先持久化回复，然后等节点恢复后在重发解决问题，因为节点崩溃后，新的 leader 被选举出来，执行了客户端的重试请求。</p>
+<p>为了避免上述问题，就必须实现 linearizable semantics（线性语义），也就是每个请求只执行一次，无论重复多少次（同一条指令）都只会返回第一次执行的结果。</p>
+<p><u>如何是实现线性语义呢？论文中采用如下方法</u>：</p>
+<ul>
+<li>每个客户端启动时会向集群注册自己，集群给每个客户端一个独一无二的 id，此后客户端会给自己的每一个请求分配一个唯一的 serial_number，并将该序号和自己的标识符封装在请求中。同时，集群中的每个节点为每一个（应用过其请求的）客户端都维护一个 session &#x3D; [id, serial_number, response].</li>
+<li>当集群的中的节点（leader）接收到一个请求时，首先会根据请求中的 id 和 serial_number 查找是否存在相应的 session，如果存在，直接回复，如果不存在，就开始正常的 raft 协议（id 和 serial_number 也会封装在 entry 中，这样应用这个请求的每一个节点就都能维护一个对应的 session 了）。</li>
+<li>如果一个客户端一次只发送一个请求，那么只需要维护最近的一个 session 即可，当新的 serial_number 来到时，旧的就可以删除了；如果一次发送多个请求，那么需要维护一组 session，客户端的请求中可以包含最小的没有接收到回复的 serial_number，那么节点就可以删除小于这个序号的所有 session 了。</li>
+</ul>
+<p><u>上面的方法看起来不错，但还需要考虑一个问题</u>：<br>因为内存有限，session 不可能永远的存储下去，除了根据客户端的序号清理过期的外，还需要主动清理一些不太活跃的 session. 其实可以将 session 保存在 stable storage 中，采用 B+ 树索引文件组织。</p>
+<p><u>如果要主动清理，那么又会涉及两个问题</u>：</p>
+<ol>
+<li>如何在所有节点中对清理某一 session 达成一致（要么所有节点——至少大多数节点——都清理，要么都不清理），不然，有些节点清理了，会可能应用重复的 command，而另外一些没有清理，则不会应用重复的 command，整个集群就处于不一致状态。</li>
+<li>当清理了不应该清理的 session 后应该怎么办？当节点接收到某个请求后，如果不存在该客户端的任何 session 记录，那么节点无法判断请求是否是重复的。</li>
+</ol>
+<p><u>对于第一个问题</u>，一种方法是超时清理，若某个 session 对应的客户端在一段时间内（寿命）不活跃，那么节点清理该客户端的 session. 如何在集群节点间对超时达成协议呢？每个 entry 可以再加入一个时间戳，表示该请求的受理时间，这样 session 的起始时间就一致了。客户端可以在不活跃的时候发送保活请求（同样需要执行共识协议），应用该请求会更新 session 的寿命。</p>
+<p><u>对于第二个问题</u>，前面提到客户端第一次启动时需要向集群注册（RegisterRPC），这个注册实际上也是一个请求，同样需要执行共识协议，为它创建第一个 session. 当节点遇到没有任何 session 记录的客户端请求（非注册请求）时就直接返回失败，abort 客户端，然客户端自己处理异常（比如发送回滚请求等）。</p>
+<h2 id="Q9：只读请求（read-only-request）的优化？"><a href="#Q9：只读请求（read-only-request）的优化？" class="headerlink" title="Q9：只读请求（read-only request）的优化？"></a>Q9：只读请求（read-only request）的优化？</h2>
               
             </div>
             <hr/>
