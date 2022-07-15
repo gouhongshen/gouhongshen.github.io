@@ -16,19 +16,25 @@
   <meta name="author" content="gouhongshen">
   <meta name="keywords" content="">
   
-    <meta property="og:type" content="article">
-<meta property="og:title" content="查询处理篇：排序">
-<meta property="og:url" content="http://example.com/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9A%E6%8E%92%E5%BA%8F/index.html">
+    <meta name="description" content="前言查询处理（Query Processing）指的是那些涉及从数据库中读取数据的操作（不包括写，当然了，如果有必要，本部分也会涉及）。 本部分讨论的单机数据库中（后面有时间会拓展到并行&#x2F;分布式系统），这些单个的查询操作执行的过程以及如何衡量它们的代价等等。   单机部分 查询处理篇：Selection 操作  查询处理篇：Join 操作  查询处理篇：Sorting     并行&amp;#x">
+<meta property="og:type" content="article">
+<meta property="og:title" content="查询处理篇零：总论">
+<meta property="og:url" content="http://example.com/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9A%E6%80%BB%E8%AE%BA/index.html">
 <meta property="og:site_name" content="Gou&#39;s Blog">
+<meta property="og:description" content="前言查询处理（Query Processing）指的是那些涉及从数据库中读取数据的操作（不包括写，当然了，如果有必要，本部分也会涉及）。 本部分讨论的单机数据库中（后面有时间会拓展到并行&#x2F;分布式系统），这些单个的查询操作执行的过程以及如何衡量它们的代价等等。   单机部分 查询处理篇：Selection 操作  查询处理篇：Join 操作  查询处理篇：Sorting     并行&amp;#x">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2022-07-01T08:20:55.000Z">
-<meta property="article:modified_time" content="2022-07-12T01:21:31.300Z">
+<meta property="og:image" content="http://example.com/img/query_processing_0/0.jpg">
+<meta property="og:image" content="http://example.com/img/query_processing_0/1.jpg">
+<meta property="og:image" content="http://example.com/img/query_processing_0/2.jpg">
+<meta property="article:published_time" content="2022-07-01T08:23:09.000Z">
+<meta property="article:modified_time" content="2022-07-15T08:28:16.914Z">
 <meta property="article:author" content="gouhongshen">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://example.com/img/query_processing_0/0.jpg">
   
   
   
-  <title>查询处理篇：排序 - Gou&#39;s Blog</title>
+  <title>查询处理篇零：总论 - Gou&#39;s Blog</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -195,7 +201,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="查询处理篇：排序"></span>
+            <span id="subtitle" data-typed-text="查询处理篇零：总论"></span>
           
         </div>
 
@@ -206,7 +212,7 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-07-01 16:20" pubdate>
+        <time datetime="2022-07-01 16:23" pubdate>
           2022年7月1日 下午
         </time>
       </span>
@@ -218,7 +224,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          0 字
+          1.2k 字
         
       </span>
     
@@ -229,7 +235,7 @@
         
         
         
-          1 分钟
+          14 分钟
         
       </span>
     
@@ -275,11 +281,49 @@
         <div id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">查询处理篇：排序</h1>
+            <h1 style="display: none">查询处理篇零：总论</h1>
             
             <div class="markdown-body">
               
-              
+              <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>查询处理（Query Processing）指的是那些涉及从数据库中读取数据的操作（不包括写，当然了，如果有必要，本部分也会涉及）。</p>
+<p>本部分讨论的单机数据库中（后面有时间会拓展到并行&#x2F;分布式系统），这些单个的查询操作执行的过程以及如何衡量它们的代价等等。</p>
+</br>
+
+<p><font color=red>单机部分</font></p>
+<a href="/2022/07/15/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9ASelection%20%E6%93%8D%E4%BD%9C/" title="查询处理篇：Selection 操作">查询处理篇：Selection 操作</a> </br>
+<a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9AJoin%20%E6%93%8D%E4%BD%9C/" title="查询处理篇：Join 操作">查询处理篇：Join 操作</a> </br>
+<a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9ASorting/" title="查询处理篇：Sorting">查询处理篇：Sorting</a> </br>
+
+</br>
+
+<p><font color=red>并行&#x2F;分布式部分</font></p>
+<h2 id="前置知识"><a href="#前置知识" class="headerlink" title="前置知识"></a>前置知识</h2><p><img src="/img/query_processing_0/0.jpg" srcset="/img/loading.gif" lazyload><br>如上图，执行一条 query 的步骤通常包括以下三步：</p>
+<ul>
+<li>parsing and translation：将 sql 语句翻译成关系代数（relational algebra）。</li>
+<li>optimization：衡量代价，选择合适的执行方案（query-execution plan）。</li>
+<li>evaluation：执行具体的方案，然后输出结果。</li>
+</ul>
+<p>optimization 和 evaluation 内容很多，可以分为三部分：</p>
+<ol>
+<li>将关系代数做等价变换，生成多个不同的执行方案</li>
+<li>衡量每个执行方案的代价，选择最优的一个作为最后方案</li>
+<li>执行方案。</li>
+</ol>
+<p>第 1、2 部分将在<strong>查询优化篇中（暂无）</strong>介绍，<u>本部分（查询处理篇）主要涉及 3 执行方案中的单个操作的执行和代价衡量</u>，参考下面例子：<br><img src="/img/query_processing_0/1.jpg" srcset="/img/loading.gif" lazyload></p>
+<p>假设有一个 query 如上图，经过 parsing and translation 可以产生如下的代数表达式：</p>
+<p><img src="/img/query_processing_0/2.jpg" srcset="/img/loading.gif" lazyload></p>
+<p>其中 $\Pi,\ \sigma$ 分别表示投影（projection）和选择（selection）操作。有了表达式还不够，代数表达式包含多个操作，所以还需要告诉数据库系统应该如何执行这一系列操作，比如应该如何执行 $\sigma_{salary&lt; 7500}$ 这个操作，是顺序读取表文件还是采用索引，这个步骤称为注释（annotation）。一个代数表达式操作 + 注释被称为执行原语（evaluation primitive），如 $\sigma_{salary&lt; 7500}\ (use\ index\ 1)$，执行一条 query 所包含的一组执行原语就叫做执行方案（query-execution plan）.</p>
+<p><font color=red>执行一个方案需要执行方案中的每一个操作，本部分的内容就是研究每个操作是如何执行的，以及衡量它们的代价</font>.</p>
+<h2 id="代价模型（Cost-Model）"><a href="#代价模型（Cost-Model）" class="headerlink" title="代价模型（Cost Model）"></a>代价模型（Cost Model）</h2><p>这里介绍在后续篇章中使用的衡量操作代价的模型，在 PostgreSQL（2018）中代价包括：</p>
+<ol>
+<li>每个元组的的 CPU 开销</li>
+<li>每个 Index entry 的 CPU 开销</li>
+<li>每个其他操作（如数学运算、比较、函数）等的 CPU 开销</li>
+<li>I&#x2F;O 开销</li>
+</ol>
+<p>一般数据库对上述参数都有默认值，为了简单起见，本部分以 I&#x2F;O 开销为主要因素衡量代价，主要有：需要传输的 block 数量和随机 I&#x2F;O 访问次数。用 $t_T,\ t_S$ 分别作为传输一个 block 的时间和寻道等（包含旋转延迟）时间，若一个操作需要传输 $b$ 个 block，执行 $S$ 次随机访问，那么总的开销为 $b * t_T + S * t_S$ 秒。</p>
+<p>另外，buffer pool 的数量也很重要，在该模型中使用 $M$ 衡量。</p>
+
               
             </div>
             <hr/>
@@ -295,8 +339,8 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>查询处理篇：排序</div>
-      <div>http://example.com/2022/07/01/查询处理篇：排序/</div>
+      <div>查询处理篇零：总论</div>
+      <div>http://example.com/2022/07/01/查询处理篇：总论/</div>
     </div>
     <div class="license-meta">
       
@@ -338,9 +382,9 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9A%E4%BA%A4%E9%9B%86/" title="查询处理篇：交集">
+                      <a href="/2022/07/04/%E7%B4%A2%E5%BC%95%E7%AF%87%E9%9B%B6%EF%BC%9A%E7%B4%A2%E5%BC%95%E6%80%BB%E8%AE%BA/" title="索引篇零：索引总论">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">查询处理篇：交集</span>
+                        <span class="hidden-mobile">索引篇零：索引总论</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     
@@ -348,8 +392,8 @@
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2022/07/01/%E6%95%B0%E6%8D%AE%E5%BA%93%E7%BC%93%E5%86%B2%E6%B1%A0%EF%BC%88buffer-pool%EF%BC%89/" title="数据库缓冲池（buffer pool）">
-                        <span class="hidden-mobile">数据库缓冲池（buffer pool）</span>
+                      <a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9AJoin%20%E6%93%8D%E4%BD%9C/" title="查询处理篇：Join 操作">
+                        <span class="hidden-mobile">查询处理篇：Join 操作</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>

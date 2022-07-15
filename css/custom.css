@@ -22,14 +22,10 @@ html, body, .markdown-body {
     font-size: 19px;
 }
 
-/* 一级标题居中 */
-/* h1 {
-    text-align: center;
-} */
+
 
 u {
     border-bottom: 2px solid darkorange;
     text-decoration:none
 }
-
 

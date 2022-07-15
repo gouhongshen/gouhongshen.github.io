@@ -16,19 +16,21 @@
   <meta name="author" content="gouhongshen">
   <meta name="keywords" content="">
   
-    <meta property="og:type" content="article">
-<meta property="og:title" content="查询处理篇：交集">
-<meta property="og:url" content="http://example.com/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9A%E4%BA%A4%E9%9B%86/index.html">
+    <meta name="description" content="假设一张表的所有记录都存储在一个文件中，并且该文件的 block 都连续存储，这样计算起来简单些 ^_^  本文研究选择操作 $\sigma_{expression}$，下面分各种情况介绍操作的执行过程和代价。 如果采用线性扫描*线性扫描也就是从文件的第一个 block 开始，读取每一条记录，判断它是否满足选择条件（$expression$），这种方法的好处是在任何情况下都可以用，虽然可能性能不">
+<meta property="og:type" content="article">
+<meta property="og:title" content="查询处理篇：Selection 操作">
+<meta property="og:url" content="http://example.com/2022/07/15/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9ASelection%20%E6%93%8D%E4%BD%9C/index.html">
 <meta property="og:site_name" content="Gou&#39;s Blog">
+<meta property="og:description" content="假设一张表的所有记录都存储在一个文件中，并且该文件的 block 都连续存储，这样计算起来简单些 ^_^  本文研究选择操作 $\sigma_{expression}$，下面分各种情况介绍操作的执行过程和代价。 如果采用线性扫描*线性扫描也就是从文件的第一个 block 开始，读取每一条记录，判断它是否满足选择条件（$expression$），这种方法的好处是在任何情况下都可以用，虽然可能性能不">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2022-07-01T08:21:19.000Z">
-<meta property="article:modified_time" content="2022-07-12T01:21:31.300Z">
+<meta property="article:published_time" content="2022-07-15T06:29:05.000Z">
+<meta property="article:modified_time" content="2022-07-15T12:15:45.068Z">
 <meta property="article:author" content="gouhongshen">
 <meta name="twitter:card" content="summary_large_image">
   
   
   
-  <title>查询处理篇：交集 - Gou&#39;s Blog</title>
+  <title>查询处理篇：Selection 操作 - Gou&#39;s Blog</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -195,7 +197,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="查询处理篇：交集"></span>
+            <span id="subtitle" data-typed-text="查询处理篇：Selection 操作"></span>
           
         </div>
 
@@ -206,8 +208,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-07-01 16:21" pubdate>
-          2022年7月1日 下午
+        <time datetime="2022-07-15 14:29" pubdate>
+          2022年7月15日 下午
         </time>
       </span>
     
@@ -218,7 +220,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          0 字
+          2.3k 字
         
       </span>
     
@@ -229,7 +231,7 @@
         
         
         
-          1 分钟
+          26 分钟
         
       </span>
     
@@ -275,11 +277,54 @@
         <div id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">查询处理篇：交集</h1>
+            <h1 style="display: none">查询处理篇：Selection 操作</h1>
             
             <div class="markdown-body">
               
-              
+              <blockquote>
+<p>假设一张表的所有记录都存储在一个文件中，并且该文件的 block 都连续存储，这样计算起来简单些 ^_^</p>
+</blockquote>
+<p>本文研究选择操作 $\sigma_{expression}$，下面分各种情况介绍操作的执行过程和代价。</p>
+<h3 id="如果采用线性扫描"><a href="#如果采用线性扫描" class="headerlink" title="如果采用线性扫描*"></a>如果采用线性扫描*</h3><p>线性扫描也就是从文件的第一个 block 开始，读取每一条记录，判断它是否满足选择条件（$expression$），这种方法的好处是在任何情况下都可以用，虽然可能性能不好。</p>
+<p>如果选择条件是 non-key 上的等值判断或比较，<u>那么它的代价为</u>：<br>$$ t_S + b_r * t_T $$</p>
+<blockquote>
+<p>其中 $b_r$ 表示文件总共包含多少个 block. 在扫描过程中，初始需要一次随机 I&#x2F;O 找到第一个 block，满足条件的记录可能不止一条，而线性扫描又不考虑有序之类的情况，所以必须扫描全文件。</p>
+</blockquote>
+</br>
+
+<p>如果选择条件是 key 上的等值判断，<u>那么它的代价为</u>：<br>$$ average &#x3D; t_S + \frac{b_r}{2} * t_T $$</p>
+<blockquote>
+<p>这个也挺好理解的，key 是不重复的，满足条件的记录最多只有一条，所以平均来说，只需扫描一半的 block.</p>
+</blockquote>
+</br>
+
+<p>下面讨论使用索引的情况（当然假设相应的索引存在，叶子节点存储指向记录的指针）。这里只涉及 B+ 树索引，使用 $h_i$ 表示树高（从根节点到叶子节点需要访问 block 的数量），并且考虑没有节点提前驻留在内存中，下同。事实上，B+ 树的节点有 90% 是叶节点，非叶子节点很少，因此绝大多数数据库系统会提前将所有非叶子节点读取到内存中，因此 $h_i$ 在绝大多数情况下等于 1，不过这里不做这个假设。下面提到的 key&#x2F;non-key 表示主键（primary key），与索引的 search key 没有必然的联系，相关讨论见 <a href="/2022/07/04/%E7%B4%A2%E5%BC%95%E7%AF%87%E9%9B%B6%EF%BC%9A%E7%B4%A2%E5%BC%95%E6%80%BB%E8%AE%BA/" title="索引篇零：索引总论">索引篇零：索引总论</a>。</p>
+<h3 id="如果使用-B-树-Primary-Index"><a href="#如果使用-B-树-Primary-Index" class="headerlink" title="如果使用 B+ 树 Primary Index"></a>如果使用 B+ 树 Primary Index</h3><p>如果选择条件是 key 上面的等值判断，<u>那么它的代价为</u>：<br>$$ (h_i + 1) * (t_T + t_S) $$</p>
+<blockquote>
+<p>从根节点到叶节点需要读取 $h_i$ 个 block 到内存中，它们不太可能是连续的，所以为了读取包含目标 search key value 的 block 分别需要 $h_i$ 次随机访问（定位 block）和 $h_i$ 次 block 传输，再分别需要额外的 1 次随机 I&#x2F;O 和 block 传输获取指定的记录。</p>
+</blockquote>
+<br>
+
+<p>如果选择条件是 non-key 上面的等值判断或比较，<u>那么它的代价为</u>：<br>$$ h_i * (t_T + t_S) + t_S + b * t_T $$</p>
+<blockquote>
+<p>该 search key 非主键，所以不一定唯一，存在多条 search key value 相等的记录。又因为这是 primary index，所以 search key value 相等的记录在文件中必然连续存储。无论是等值判断还是比较，都会找到满足条件的第一条记录，然后顺序扫描即可。从根节点找到包含第一条记录指针的叶节点需要 $h_i$ 随机 I&#x2F;O 和 block 传输，然后根据该指针，再一次随机 I&#x2F;O 定位到包含第一条记录的 block（中的该记录的偏移量），假设这些 search key value 相等的记录存储在连续的 $b$ 个 block中，需要再加上 $b$ 次 block 传输。</p>
+</blockquote>
+<h3 id="如果使用-B-树-Secondary-Index"><a href="#如果使用-B-树-Secondary-Index" class="headerlink" title="如果使用 B+ 树 Secondary Index"></a>如果使用 B+ 树 Secondary Index</h3><p>如果选择条件是 key 上面的等值判断，<u>那么它的代价为</u>：<br>$$ (h_i + 1) * (t_T + t_S) $$</p>
+<blockquote>
+<p>没什么好解释的，最多只读取一条记录，和使用 B+ 树 primary index 时在 key 上面等值判断情况一致。</p>
+</blockquote>
+<br>
+
+<p>如果选择条件是 non-key 上面的等值判断或比较，<u>那么它的代价为</u>：<br>$$ (h_i + n) * (t_T + t_S) &#x3D; h_i * (t_T + t_S) + n * (t_T + t_S) $$</p>
+<blockquote>
+<p>同样的，满足条件的记录可能存在多条，因此需要 $h_i$ 次随机 I&#x2F;O 和 block 传输将叶子节点读取到内存中。该叶子节点包含满足条件的第一条记录的指针，从该指针开始顺序扫描索引（可能跨越多个叶子节点），就能获取到所有指向满足条件的记录的指针，假设有 $n$ 条。它们的指针虽然在索引中顺序存储，但这是 secondary index，指针指向的记录却可能分布在不同的 block 中，所以要获取到这些记录，最多还需要 $n$ 次随机 I&#x2F;O 和 block 传输。</p>
+</blockquote>
+<p>从这里可知，<u>如果满足条件的记录非常多</u>，那么 secondary index 的代价很可能比线性扫描还要高！！！所以 secondary index 只适合少量记录读取的情况。</p>
+<p>如果提前就知道需要读取记录的多少，那么就能在没有其他索引可用时在 secondary index 和线性扫描中选择最好的方案（即操作的注释，<a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9A%E6%80%BB%E8%AE%BA/" title="查询处理篇零：总论">查询处理篇零：总论</a>），事实上很难提前得知。<u>为了应对这种情况</u>，PostgreSQL 使用了一种混合方法，bitmap index scan. </p>
+<blockquote>
+<p>search key value 在叶子节点中是按序存储的，在这些叶子节点上再建立多级稀疏索引，就能够跳过大量无效的记录。这是索引的最大好处。然而，secondary index 中相邻 search key value 指向的记录可能存储在不同的 block 中，会存在大量的随机 I&#x2F;O，比较耗时。<u>bitmap index scan 便是从这点下手</u>，该算法首先会为该表创建一个 bitmap，1bit 对应一个 block，当使用 secondary index 检索记录时，不着急读取指针所指的 block，而是获取该 block 编号，再将 bitmap 中该编号对应的位置 1，待所有包含目标记录的 block 都被标记完后，顺序扫描该 bitmap，读取那些被置 1 的 block，没有置 1 的就跳过，最后在这些 block 中检索目标记录。这样记录的读取就尽量做到了顺序扫描。</p>
+</blockquote>
+
               
             </div>
             <hr/>
@@ -295,8 +340,8 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>查询处理篇：交集</div>
-      <div>http://example.com/2022/07/01/查询处理篇：交集/</div>
+      <div>查询处理篇：Selection 操作</div>
+      <div>http://example.com/2022/07/15/查询处理篇：Selection 操作/</div>
     </div>
     <div class="license-meta">
       
@@ -308,7 +353,7 @@
       
         <div class="license-meta-item license-meta-date">
           <div>发布于</div>
-          <div>2022年7月1日</div>
+          <div>2022年7月15日</div>
         </div>
       
       
@@ -338,18 +383,12 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9A%E4%BB%A3%E4%BB%B7%E8%A1%A1%E9%87%8F/" title="查询处理篇：代价衡量">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">查询处理篇：代价衡量</span>
-                        <span class="visible-mobile">上一篇</span>
-                      </a>
-                    
                   </article>
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9A%E6%8E%92%E5%BA%8F/" title="查询处理篇：排序">
-                        <span class="hidden-mobile">查询处理篇：排序</span>
+                      <a href="/2022/07/07/%E7%AE%97%E6%B3%95%EF%BC%9A%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92%E4%B8%93%E9%A2%98/" title="算法：动态规划专题">
+                        <span class="hidden-mobile">算法：动态规划专题</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>

@@ -223,6 +223,140 @@
         
           <i class="index-pin  " title="Pin on top"></i>
         
+        <a href="/2022/06/25/%E4%B8%A4%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4%E5%8D%8F%E8%AE%AE/" target="_self">
+          事务篇五：两阶段提交协议
+        </a>
+      </h1>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/06/25/%E4%B8%A4%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4%E5%8D%8F%E8%AE%AE/" target="_self">
+        <div>
+          前言这一篇文章主要是介绍如何在分布式数据库中保证事务的原子性和数据库的一致性。注意，两阶段提交协议只是用于协调在多个节点执行的事务（同一个事务被分成了多个子事务，并执行在多个节点上）的提交过程，并没有限制各个子事务在本地执行时使用的并发协议。为方便叙述，给出一个分布式数据库的简化模型。其中 TC 表示 transaction coordinator，负责协调在本地节点发起的本地或全局事务（若是全局
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2022-06-25 11:46" pubdate>
+              2022-06-25
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" class="category-chain-item">分布式</a>
+  
+  
+
+      </span>
+    
+  
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/">#分布式事务</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h1 class="index-header">
+        
+          <i class="index-pin  " title="Pin on top"></i>
+        
+        <a href="/2022/06/22/%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" target="_self">
+          事务篇三：事务的并发控制
+        </a>
+      </h1>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/06/22/%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" target="_self">
+        <div>
+          前言在事务篇一：事务总论中介绍了事务基本概念和具有特性，在事务篇二：事务的可串行化中介绍了调度要具备何种性质，才能在并发事务执行后使系统处于一致性状态和事务失败后能让系统回到安全状态，还论证了隔离性与一致性的关系。 并发控制的工作就是，在事务并发时，确保只会产生具备这种性质的调度方案，具体地，并发控制策略的目标是同时保证两点：  使系统具有较高的事务并发度 确保生成的调度方案，同时是冲突可串行化（
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2022-06-22 16:29" pubdate>
+              2022-06-22
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E4%BA%8B%E5%8A%A1/" class="category-chain-item">事务</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E4%BA%8B%E5%8A%A1/">#事务</a>
+            
+              <a href="/tags/mvcc/">#mvcc</a>
+            
+              <a href="/tags/snapshot/">#snapshot</a>
+            
+              <a href="/tags/two-phase-locking/">#two-phase-locking</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h1 class="index-header">
+        
+          <i class="index-pin  " title="Pin on top"></i>
+        
         <a href="/2022/06/22/%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%8F%AF%E4%B8%B2%E8%A1%8C%E5%8C%96/" target="_self">
           事务篇二：事务的可串行化
         </a>
@@ -537,17 +671,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h1 class="index-header">
         
-          <i class="index-pin  " title="Pin on top"></i>
-        
-        <a href="/2022/06/13/Hexo%20%E5%8D%9A%E5%AE%A2%E4%BD%BF%E7%94%A8%E8%AE%B0%E5%BD%95/" target="_self">
-          Hexo 博客使用记录
+        <a href="/2022/07/15/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9ASelection%20%E6%93%8D%E4%BD%9C/" target="_self">
+          查询处理篇：Selection 操作
         </a>
       </h1>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/06/13/Hexo%20%E5%8D%9A%E5%AE%A2%E4%BD%BF%E7%94%A8%E8%AE%B0%E5%BD%95/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/07/15/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9ASelection%20%E6%93%8D%E4%BD%9C/" target="_self">
         <div>
-          终于搬新博客了 Record 1：文章内部图片死活加载不出来刚使用 fluid 主题时，文章封面图片可以设置，但文章内的图片无法显示，markdown 语法和 HTML 语法都无济于事。最后死马当活马医，将hexo-asset-image卸载了，重试，居然可以了。 Record 2：图片存放问题有两个文件夹可以存放：&#x2F;source&#x2F;img 和 &#x2F;public&amp;#x2F
+          假设一张表的所有记录都存储在一个文件中，并且该文件的 block 都连续存储，这样计算起来简单些 ^_^  本文研究选择操作 $\sigma_{expression}$，下面分各种情况介绍操作的执行过程和代价。 如果采用线性扫描*线性扫描也就是从文件的第一个 block 开始，读取每一条记录，判断它是否满足选择条件（$expression$），这种方法的好处是在任何情况下都可以用，虽然可能性能不
         </div>
       </a>
 
@@ -555,8 +687,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2022-06-13 21:13" pubdate>
-              2022-06-13
+            <time datetime="2022-07-15 14:29" pubdate>
+              2022-07-15
             </time>
           </div>
         
@@ -572,46 +704,13 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h1 class="index-header">
         
-        <a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9A%E4%BB%A3%E4%BB%B7%E8%A1%A1%E9%87%8F/" target="_self">
-          查询处理篇：代价衡量
+        <a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9AJoin%20%E6%93%8D%E4%BD%9C/" target="_self">
+          查询处理篇：Join 操作
         </a>
       </h1>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9A%E4%BB%A3%E4%BB%B7%E8%A1%A1%E9%87%8F/" target="_self">
-        <div>
-          
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2022-07-01 16:23" pubdate>
-              2022-07-01
-            </time>
-          </div>
-        
-        
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h1 class="index-header">
-        
-        <a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9A%E4%BA%A4%E9%9B%86/" target="_self">
-          查询处理篇：交集
-        </a>
-      </h1>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9A%E4%BA%A4%E9%9B%86/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9AJoin%20%E6%93%8D%E4%BD%9C/" target="_self">
         <div>
           
         </div>
@@ -638,13 +737,13 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h1 class="index-header">
         
-        <a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9A%E6%8E%92%E5%BA%8F/" target="_self">
-          查询处理篇：排序
+        <a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9ASorting/" target="_self">
+          查询处理篇：Sorting
         </a>
       </h1>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9A%E6%8E%92%E5%BA%8F/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9ASorting/" target="_self">
         <div>
           
         </div>
@@ -655,39 +754,6 @@
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
             <time datetime="2022-07-01 16:20" pubdate>
-              2022-07-01
-            </time>
-          </div>
-        
-        
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h1 class="index-header">
-        
-        <a href="/2022/07/01/%E6%95%B0%E6%8D%AE%E5%BA%93%E7%BC%93%E5%86%B2%E6%B1%A0%EF%BC%88buffer-pool%EF%BC%89/" target="_self">
-          数据库缓冲池（buffer pool）
-        </a>
-      </h1>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/07/01/%E6%95%B0%E6%8D%AE%E5%BA%93%E7%BC%93%E5%86%B2%E6%B1%A0%EF%BC%88buffer-pool%EF%BC%89/" target="_self">
-        <div>
-          
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2022-07-01 16:13" pubdate>
               2022-07-01
             </time>
           </div>
