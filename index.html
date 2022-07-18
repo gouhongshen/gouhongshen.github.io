@@ -266,7 +266,7 @@
       
       <a class="index-excerpt index-excerpt__noimg" href="/2022/06/16/%E4%B8%8E%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84%E5%88%9D%E8%A7%81/" target="_self">
         <div>
-          前言该篇文章是一篇索引目录，索引课程 CMU-15445 的笔记： 基础内容： 数据库系统分类  关系型数据库磁盘存储     索引部分： 索引篇零：索引总论    Post not found: 索引篇一：可拓展哈希    索引篇二：B-plus Tree  索引篇三：LSM Tree        查询处理部分： 查询处理篇：代价衡量     查询处理篇：排序     查询处理篇：交集
+          前言该篇文章是一篇索引目录，索引课程 CMU-15445 的笔记： 基础内容： 数据库系统分类  关系型数据库磁盘存储     索引部分： 索引篇零：索引总论    索引篇一：哈希索引    索引篇二：B-plus Tree  索引篇三：LSM Tree        查询处理部分： 查询处理篇：总论     查询处理篇：Sorting     查询处理篇：Join 操作     查询处理篇：Se
         </div>
       </a>
 
@@ -387,7 +387,7 @@
           <i class="index-pin  " title="Pin on top"></i>
         
         <a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9A%E6%80%BB%E8%AE%BA/" target="_self">
-          查询处理篇零：总论
+          查询处理篇：总论
         </a>
       </h1>
 
@@ -453,7 +453,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
+  <a href="/categories/%E4%BA%8B%E5%8A%A1/" class="category-chain-item">事务</a>
   
   
 
@@ -488,15 +488,85 @@
         
           <i class="index-pin  " title="Pin on top"></i>
         
-        <a href="/2022/07/07/%E7%AE%97%E6%B3%95%EF%BC%9A%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92%E4%B8%93%E9%A2%98/" target="_self">
-          算法：动态规划专题
+        <a href="/2022/07/17/CAP%20&amp;%20BASE/" target="_self">
+          CAP &amp; BASE
         </a>
       </h1>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/07/07/%E7%AE%97%E6%B3%95%EF%BC%9A%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92%E4%B8%93%E9%A2%98/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/07/17/CAP%20&amp;%20BASE/" target="_self">
         <div>
-          力扣 1235-规划兼职工作题目简介  每个任务包括三个参数：开始时间、结束时间、报酬。现在有一堆任务，你可以从中选择任务来做，使得报酬最大，但所选择的任务的工作时间不能有重叠，如下图，选择最底下三个：    题目解析  这个题目一看就知道用动态规划，但是状态转移方程没那么简单，最开始的想法很简单：对于某个任务，它可以从在它之前的、与它不冲突的任务转移过来，那么只需要记录从这些任务转移来的最大报酬
+          数据一般有多个备份，存储在多个分布式节点上。像 raft 这类共识算法所做的努力是维护多个数据备份之间的一致性。raft 算法的正常执行需要集群中大多数节点能够相互通信，如果不能满足这个条件，为了满足一致性，集群将对更新请求不可用。 而在大规模分布式系统中，网络分区几乎无法避免。如果和某个客户端相连的分区（可能多个）中节点数都不足大多数，那该客户端将无法执行更新请求（读请求有可能，看具体实现）；如
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2022-07-17 11:23" pubdate>
+              2022-07-17
+            </time>
+          </div>
+        
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h1 class="index-header">
+        
+          <i class="index-pin  " title="Pin on top"></i>
+        
+        <a href="/2022/07/15/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9ASelection%20%E6%93%8D%E4%BD%9C/" target="_self">
+          查询处理篇：Selection 操作
+        </a>
+      </h1>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/07/15/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9ASelection%20%E6%93%8D%E4%BD%9C/" target="_self">
+        <div>
+          假设一张表的所有记录都存储在一个文件中，并且该文件的 block 在磁盘上连续存储，这样计算起来简单些 ^_^  本文研究选择操作 $\sigma_{expression}$，下面分各种情况介绍操作的执行过程和代价。 采用线性扫描线性扫描也就是从文件的第一个 block 开始，读取每一条记录，判断它是否满足选择条件（$expression$），这种方法的好处是在任何情况下都可以用，虽然可能性能不
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2022-07-15 14:29" pubdate>
+              2022-07-15
+            </time>
+          </div>
+        
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h1 class="index-header">
+        
+          <i class="index-pin  " title="Pin on top"></i>
+        
+        <a href="/2022/07/07/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98%E6%9D%82%E8%AE%B0/" target="_self">
+          算法刷题杂记
+        </a>
+      </h1>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/07/07/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98%E6%9D%82%E8%AE%B0/" target="_self">
+        <div>
+          分类目录 引用时名字中的字母要保持原样，不能改成小写  动态规划 力扣-123-买卖股票的最佳时机-III力扣-1235-规划兼职工作力扣-124-二叉树中的最大路径和力扣-894-所有可能的真二叉树力扣-剑指-Offer-II-091-粉刷房子  回溯 力扣-15-三数之和  双指针 力扣-15-三数之和  题目杂记力扣 15-三数之和 链接  题目简介      题目解析  该题可以采用回溯和
         </div>
       </a>
 
@@ -530,15 +600,15 @@
         
           <i class="index-pin  " title="Pin on top"></i>
         
-        <a href="/2022/06/30/%E7%B4%A2%E5%BC%95%E7%AF%87%E4%B8%89%EF%BC%9ALSM%20Tree/" target="_self">
-          索引篇三：LSM Tree
+        <a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9AJoin%20%E6%93%8D%E4%BD%9C/" target="_self">
+          查询处理篇：Join 操作
         </a>
       </h1>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/06/30/%E7%B4%A2%E5%BC%95%E7%AF%87%E4%B8%89%EF%BC%9ALSM%20Tree/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9AJoin%20%E6%93%8D%E4%BD%9C/" target="_self">
         <div>
-          前言考虑这样一种场景，有大量的数据需要通过 B+ 树索引写入（update&#x2F;insert&#x2F;delete）数据库，相邻的待写入数据很可能处在不同的叶节点上，而该索引结构又很大，buffer pool 容纳不下所有的叶子节点，那么完成这样的写入，文件 I&#x2F;O 次数很可能与数据量成正比。若是使用 magnetic disk（磁盘），当前最快的磁盘能做到 0.05ms 每 b
+          
         </div>
       </a>
 
@@ -546,40 +616,12 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2022-06-30 09:26" pubdate>
-              2022-06-30
+            <time datetime="2022-07-01 16:21" pubdate>
+              2022-07-01
             </time>
           </div>
         
         
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E7%B4%A2%E5%BC%95/" class="category-chain-item">索引</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/%E7%B4%A2%E5%BC%95/">#索引</a>
-            
-          </div>
         
       </div>
     </article>
@@ -593,15 +635,15 @@
         
           <i class="index-pin  " title="Pin on top"></i>
         
-        <a href="/2022/06/29/%E6%95%B0%E6%8D%AE%E5%BA%93%E7%A3%81%E7%9B%98%E5%AD%98%E5%82%A8/" target="_self">
-          关系型数据库磁盘存储
+        <a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9ASorting/" target="_self">
+          查询处理篇：Sorting
         </a>
       </h1>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/06/29/%E6%95%B0%E6%8D%AE%E5%BA%93%E7%A3%81%E7%9B%98%E5%AD%98%E5%82%A8/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9ASorting/" target="_self">
         <div>
-          前言本文主要介绍关系型数据库的一张表在磁盘中是如何存储的。 绝大多数数据库系统将一张表（relation）存储在一个或多个文件中（file），由于 file 可能很大，为方便元组（tuple，也称 record）的增删改查，file 内部又被分为了多个 page（或 block，一般 4KB-8KB），真正的元组存储在 block 中。同时 block 也是内存和磁盘之间的数据传输单位。 以上的结
+          在数据库系统中会经常读取大量记录，如果这些记录有序的话，在一些场景中非常有用，比如：  query sql 语句指定输出有序。 一些 Join 算法的高效实现，见 查询处理篇：Join 操作。 向 B+ 树中插入大量的索引条目或高效地构造 B+ 树，见 索引篇二：B-plus Tree.  再区分下一些相关的概念。如果文件上面已经建立了索引，那么使用该索引也能实现顺序读取记录，但这样的顺序可能只是
         </div>
       </a>
 
@@ -609,168 +651,12 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2022-06-29 18:43" pubdate>
-              2022-06-29
+            <time datetime="2022-07-01 16:20" pubdate>
+              2022-07-01
             </time>
           </div>
         
         
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E6%96%87%E4%BB%B6%E5%AD%98%E5%82%A8/">#数据库文件存储</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h1 class="index-header">
-        
-          <i class="index-pin  " title="Pin on top"></i>
-        
-        <a href="/2022/06/29/%E7%B4%A2%E5%BC%95%E7%AF%87%E4%BA%8C%EF%BC%9AB-plus%20Tree/" target="_self">
-          索引篇二：B-plus Tree
-        </a>
-      </h1>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/06/29/%E7%B4%A2%E5%BC%95%E7%AF%87%E4%BA%8C%EF%BC%9AB-plus%20Tree/" target="_self">
-        <div>
-          B+ Tree 的结构如图 1 所示，B+ 树的每个节点包含 $n-1$ 个 search-key value，$K_1, K_2, …, K_{n-1}$，和 $n$ 个指针，$P_1, P_2, …, P_n$. 这些 search-key value 在节点中按序存储，即若 $i &lt; j$, 有 $K_i &lt; K_j$. 在实际中 search-key value 是可能存在重复
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2022-06-29 18:41" pubdate>
-              2022-06-29
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E7%B4%A2%E5%BC%95/" class="category-chain-item">索引</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/%E7%B4%A2%E5%BC%95/">#索引</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h1 class="index-header">
-        
-          <i class="index-pin  " title="Pin on top"></i>
-        
-        <a href="/2022/06/29/%E7%B4%A2%E5%BC%95%E7%AF%87%E4%B8%80%EF%BC%9A%E5%93%88%E5%B8%8C%E7%B4%A2%E5%BC%95/" target="_self">
-          索引篇一：哈希索引
-        </a>
-      </h1>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/06/29/%E7%B4%A2%E5%BC%95%E7%AF%87%E4%B8%80%EF%BC%9A%E5%93%88%E5%B8%8C%E7%B4%A2%E5%BC%95/" target="_self">
-        <div>
-          哈希函数本节内容是，如何选择一个好的哈希函数。一个理想的哈希函数能够将 search key 的值均匀地映射到各个 bucket 中，很多时候无法提前预知 search key 会取哪些值，所以功夫主要在哈希函数的选择上，一般就可能要具有如下的特质：  映射均匀。尽管无法精确知道 search key 会取哪些值，但可以能预知所有可能的取值（比如具有长度上限的字符串，整数等），那么只要保证该哈希函
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2022-06-29 18:40" pubdate>
-              2022-06-29
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E7%B4%A2%E5%BC%95/" class="category-chain-item">索引</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/%E5%8F%AF%E6%8B%93%E5%B1%95%E5%93%88%E5%B8%8C/">#可拓展哈希</a>
-            
-              <a href="/tags/%E7%B4%A2%E5%BC%95/">#索引</a>
-            
-          </div>
         
       </div>
     </article>

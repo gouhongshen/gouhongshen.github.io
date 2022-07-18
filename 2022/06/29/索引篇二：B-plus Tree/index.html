@@ -31,7 +31,7 @@
 <meta property="og:image" content="http://example.com/img/B_plus_tree/6.jpg">
 <meta property="og:image" content="http://example.com/img/B_plus_tree/7.jpg">
 <meta property="article:published_time" content="2022-06-29T10:41:27.000Z">
-<meta property="article:modified_time" content="2022-07-12T01:21:31.304Z">
+<meta property="article:modified_time" content="2022-07-16T01:56:43.176Z">
 <meta property="article:author" content="gouhongshen">
 <meta property="article:tag" content="索引">
 <meta name="twitter:card" content="summary_large_image">
@@ -229,7 +229,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          5.7k 字
+          5.8k 字
         
       </span>
     
@@ -240,7 +240,7 @@
         
         
         
-          64 分钟
+          65 分钟
         
       </span>
     
@@ -312,7 +312,7 @@
 <p>一般情况下，B+ 树节点的大小和 block 的大小一致，同为 4KB-8KB，假设 search key 的大小为 32B（一般没这么大），指针的大小为 8B，那么一个节点能存储 100 个 search key value. 如果文件中的记录总共包含 1,000,000 个 search key value，查找某个特定的记录最多只需要访问 4 个节点，即最多读 4 次磁盘，远远少于平衡二叉树的次数，最后只需要根据指针的值再读一次磁盘就能得到目标记录。</p>
 <p><u>而范围查询代价更高一些</u>，假设最后返回的指针个数为 M，这 M 个指针在叶子节点上必然是连续的，所以要读取这 M 个指针，最多需要读取 $\lceil\frac{M}{n&#x2F;2}\rceil + 1$ 次磁盘，因为一个叶子节点最少有 $\frac{n}{2}$ 个指针。为了获取这些指针所指向的记录，还需要计算一些开销，<u>如果是 secondary index</u>，尽管记录的 search key value 是相邻的，但这些记录在文件中却不一定相邻，所以最多需要 M 次磁盘 I&#x2F;O. <u>如果是 primary index</u>，那么这些记录在文件中也是相邻的，所以一次磁盘 I&#x2F;O 读取一个 block，其中包含多条记录，磁盘 I&#x2F;O 大大减少。</p>
 <p><font color=red>假如 search key value 存在重复，如何查找指定的记录？</font>使用上面所说的使用组合 search key 的方式去重，假设组合后的 search key 为 $(a_i, A_p)$，当给定 $a_i &#x3D; v$ 时，如何在组合索引中找到所有包含 search key 为 $v$ 的记录？使用范围查找，其范围为 $[lb, ub]$，且 $lb &#x3D;(v, min(A_p)),\ ub &#x3D;(v, max(A_p))$.</p>
-<h2 id="B-树文件组织方式"><a href="#B-树文件组织方式" class="headerlink" title="B+ 树文件组织方式"></a>B+ 树文件组织方式</h2><p>本节讨论，当采用 B+ 树为文件建立索引时，文件应如何组织。<br><img src="/img/B_plus_tree/6.jpg" srcset="/img/loading.gif" lazyload alt="图 6"></p>
+<h2 id="B-树文件组织方式"><a href="#B-树文件组织方式" class="headerlink" title="B+ 树文件组织方式"></a>B+ 树文件组织方式</h2><p>本节讨论，如何以 B+ 树结构组织文件，需要与 B+ 树索引区分开。普通的 B+ 树索引是在文件上建立索引（叶子节点存储的是指针），而 B+ 树文件的叶子节点存储实际的记录。<br><img src="/img/B_plus_tree/6.jpg" srcset="/img/loading.gif" lazyload alt="图 6"></p>
 <p>如上图 6，在 B+ 树文件组织方式中，叶子节点（叶子 block）存储实际的记录，而不是指向记录的指针，而非叶子节点还和 B+ 树的定义一样。因为记录要比指针大很多，这样一来叶子节点存储的记录就会大大减少，但依旧要求至少半满。</p>
 <p>查找、插入和删除操作与在 B+ 树上定义的一样。</p>
 <p><strong>当要插入一条 search key value 为 $v$ 的记录时</strong>，搜索该 B+ 树，找到 $&lt;&#x3D; v$ 的最大的 search key value（或者最小的 $&gt;&#x3D; v$ 的 search key value），同样也就找到了待插入的 block（叶子节点）。<u>如果该 block 还有空间</u>，那么按 search key value 的顺序插入该记录（可能涉及到记录在 block 中的移动，参考数组的插入操作）。<u>如果没有空间</u>，执行分裂操作（split），将待插入纪录和原记录按照 search key value 顺序平均分成两部分，同时创建一个新的 block（叶子节点），将前一半放在原 block 中，后一半放入新 block中。还需要索引新 block，即放入一条记录 $(key, P_i)$ 到分裂 block 的父节点中，其中 $key$ 是新 block 中最小的 search key value，$P_i$ 则是指向新 block 的指针。很明显，这是一个递归操作，父节点的插入依然可能引起分裂。</p>
@@ -330,7 +330,7 @@
 <p><font color=dark-green>Search Key Value 长度可变</font><br>如果 B+ 树的 search key 为字符串，长度可变，那么每个节点的容量就不一定，出度不一定。同时，插入、删除等过程也会发生变化，不再根据 search key value 的个数判断是否指向分裂还是合并，而是 block 是否能够容纳新的内容。为了增加每个节点能够容纳的 search key value 的数量（尽量使树又矮又胖），<u>一种前缀压缩（prefix compression）的技术被提出来</u>。</p>
 <p>对于每个非叶子节点，在索引子树时（或叶子节点），不需要存储完整的 search key value，而是只存储一部分前缀，只要在节点内部，能够区分各个子树即可，如下图 7。<br><img src="/img/B_plus_tree/7.jpg" srcset="/img/loading.gif" lazyload alt="图 7"></p>
 <p><font color=dark-green>B+ 树的高效构造</font><br>考虑这样这种场景，在一个非常大的表上（很多记录）建一个 secondary index 类型的 B+ 树索引，表和索引都很大，内存是放不下的。<u>按照最简单的方式构建</u>，扫描表的每一条记录，然后往 B+ 树中插入条目，可能是 search key value 和指向记录的指针，或者是前面提到的 search key value 和 primary index 中该记录对应的 search key value. 由于是 non-clustering index，所以相邻的记录可能要插入到不同的节点中（block），也就是可能存在大量的磁盘读写（表文件可以顺序扫描，每个 block 只需要一次磁盘 I&#x2F;O，而 B+ 树的各个节点 block 可能需要多次磁盘 I&#x2F;O，因为不同的记录需要插入到不同的节点，而 buffer pool 的容量有限，这些节点已经替换出了内存）。</p>
-<p>像上面这样的大量插入条目的操作被称为该索引的 bulk loading，<u>通常采用的高效的方法是</u>，创建一个临时的索引条目文件，扫描表文件，为每条记录创建一条索引条目，追加到该临时文件，然后对该临时文件排序（见 <a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9A%E6%8E%92%E5%BA%8F/" title="查询处理篇：排序">查询处理篇：排序</a>），最后扫描已经排好序的文件（非此临时文件，具体见连接），将这些索引条目插入到 B+ 树中。</p>
+<p>像上面这样的大量插入条目的操作被称为该索引的 bulk loading，<u>通常采用的高效的方法是</u>，创建一个临时的索引条目文件，扫描表文件，为每条记录创建一条索引条目，追加到该临时文件，然后对该临时文件排序（见 <a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9ASorting/" title="查询处理篇：Sorting">查询处理篇：Sorting</a>），最后扫描已经排好序的文件（非此临时文件，具体见连接），将这些索引条目插入到 B+ 树中。</p>
 <p><u>先排序再插入有什么好处？</u>上面提到的大量的磁盘 I&#x2F;O 是因为，这些在表文件中相邻的记录的索引条目不一定在索引结构中相邻（不在同一个节点 block 中），那如果先将这些索引条目按照 search key value 排好序，那么插入时，属于同一个节点的条目就能一次性插入该节点，也就是说每个节点 block 只需要一次磁盘 I&#x2F;O 即可。</p>
 <p><u>性能上还能更近一步</u>，如果索引条目要插入的 B+ 树本身是空的，那么在排完序后，不需要采用插入的方式，而是直接在排完序后的文件上构建。一个文件包含多个 block，这些 block 就是叶子节点，然后取出这些 block 中的最小的 search key value，加上一个指向 block 的指针，就可以构成上一层的条目（分配新的 block，将这些条目写入），继续下去直到创建根节点。<u>这种方式称为 bottom-up B+ tree construction</u>，能够减少大量的磁盘读写（全部的叶节点也就创建好了，也写好了）。 </p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>这里总结下 B+ 树的各种操作的时间复杂度，假设，文件中共有 $N$ 条记录，B+ 树的每个节点能存储 $n$ 个 search key value（也就是 $n+1$ 个指针），并且 search key value 不重复：</p>

@@ -16,17 +16,17 @@
   <meta name="author" content="gouhongshen">
   <meta name="keywords" content="">
   
-    <meta name="description" content="前言该篇文章是一篇索引目录，索引课程 CMU-15445 的笔记： 基础内容： 数据库系统分类  关系型数据库磁盘存储     索引部分： 索引篇零：索引总论    Post not found: 索引篇一：可拓展哈希    索引篇二：B-plus Tree  索引篇三：LSM Tree        查询处理部分： 查询处理篇：代价衡量     查询处理篇：排序     查询处理篇：交集">
+    <meta name="description" content="前言该篇文章是一篇索引目录，索引课程 CMU-15445 的笔记： 基础内容： 数据库系统分类  关系型数据库磁盘存储     索引部分： 索引篇零：索引总论    索引篇一：哈希索引    索引篇二：B-plus Tree  索引篇三：LSM Tree        查询处理部分： 查询处理篇：总论     查询处理篇：Sorting     查询处理篇：Join 操作     查询处理篇：Se">
 <meta property="og:type" content="article">
 <meta property="og:title" content="与数据库的初见">
 <meta property="og:url" content="http://example.com/2022/06/16/%E4%B8%8E%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84%E5%88%9D%E8%A7%81/index.html">
 <meta property="og:site_name" content="Gou&#39;s Blog">
-<meta property="og:description" content="前言该篇文章是一篇索引目录，索引课程 CMU-15445 的笔记： 基础内容： 数据库系统分类  关系型数据库磁盘存储     索引部分： 索引篇零：索引总论    Post not found: 索引篇一：可拓展哈希    索引篇二：B-plus Tree  索引篇三：LSM Tree        查询处理部分： 查询处理篇：代价衡量     查询处理篇：排序     查询处理篇：交集">
+<meta property="og:description" content="前言该篇文章是一篇索引目录，索引课程 CMU-15445 的笔记： 基础内容： 数据库系统分类  关系型数据库磁盘存储     索引部分： 索引篇零：索引总论    索引篇一：哈希索引    索引篇二：B-plus Tree  索引篇三：LSM Tree        查询处理部分： 查询处理篇：总论     查询处理篇：Sorting     查询处理篇：Join 操作     查询处理篇：Se">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://example.com/img/CMU15445/1.png">
 <meta property="og:image" content="http://example.com/img/CMU15445/2.png">
 <meta property="article:published_time" content="2022-06-16T12:06:26.000Z">
-<meta property="article:modified_time" content="2022-07-04T06:14:02.069Z">
+<meta property="article:modified_time" content="2022-07-16T01:59:15.791Z">
 <meta property="article:author" content="gouhongshen">
 <meta property="article:tag" content="CMU-15445">
 <meta property="article:tag" content="关系型数据库">
@@ -225,7 +225,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          185 字
+          195 字
         
       </span>
     
@@ -295,16 +295,17 @@
 
 <p><strong>索引部分：</strong></p>
 <a href="/2022/07/04/%E7%B4%A2%E5%BC%95%E7%AF%87%E9%9B%B6%EF%BC%9A%E7%B4%A2%E5%BC%95%E6%80%BB%E8%AE%BA/" title="索引篇零：索引总论">索引篇零：索引总论</a>   <br />
-<a href="#">Post not found: 索引篇一：可拓展哈希</a>   <br />
+<a href="/2022/06/29/%E7%B4%A2%E5%BC%95%E7%AF%87%E4%B8%80%EF%BC%9A%E5%93%88%E5%B8%8C%E7%B4%A2%E5%BC%95/" title="索引篇一：哈希索引">索引篇一：哈希索引</a>   <br />
 <a href="/2022/06/29/%E7%B4%A2%E5%BC%95%E7%AF%87%E4%BA%8C%EF%BC%9AB-plus%20Tree/" title="索引篇二：B-plus Tree">索引篇二：B-plus Tree</a> <br />
 <a href="/2022/06/30/%E7%B4%A2%E5%BC%95%E7%AF%87%E4%B8%89%EF%BC%9ALSM%20Tree/" title="索引篇三：LSM Tree">索引篇三：LSM Tree</a>    <br />
 
 <br />
 
 <p><strong>查询处理部分：</strong></p>
-<a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9A%E4%BB%A3%E4%BB%B7%E8%A1%A1%E9%87%8F/" title="查询处理篇：代价衡量">查询处理篇：代价衡量</a>    <br />
-<a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9A%E6%8E%92%E5%BA%8F/" title="查询处理篇：排序">查询处理篇：排序</a>    <br />
-<a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9A%E4%BA%A4%E9%9B%86/" title="查询处理篇：交集">查询处理篇：交集</a>    <br />
+<a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9A%E6%80%BB%E8%AE%BA/" title="查询处理篇：总论">查询处理篇：总论</a>    <br />
+<a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9ASorting/" title="查询处理篇：Sorting">查询处理篇：Sorting</a>    <br />
+<a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9AJoin%20%E6%93%8D%E4%BD%9C/" title="查询处理篇：Join 操作">查询处理篇：Join 操作</a>    <br />
+<a href="/2022/07/15/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9ASelection%20%E6%93%8D%E4%BD%9C/" title="查询处理篇：Selection 操作">查询处理篇：Selection 操作</a>    <br />
 
 <br />
 

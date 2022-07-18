@@ -223,6 +223,260 @@
         
           <i class="index-pin  " title="Pin on top"></i>
         
+        <a href="/2022/06/30/%E7%B4%A2%E5%BC%95%E7%AF%87%E4%B8%89%EF%BC%9ALSM%20Tree/" target="_self">
+          索引篇三：LSM Tree
+        </a>
+      </h1>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/06/30/%E7%B4%A2%E5%BC%95%E7%AF%87%E4%B8%89%EF%BC%9ALSM%20Tree/" target="_self">
+        <div>
+          前言考虑这样一种场景，有大量的数据需要通过 B+ 树索引写入（update&#x2F;insert&#x2F;delete）数据库，相邻的待写入数据很可能处在不同的叶节点上，而该索引结构又很大，buffer pool 容纳不下所有的叶子节点，那么完成这样的写入，文件 I&#x2F;O 次数很可能与数据量成正比。若是使用 magnetic disk（磁盘），当前最快的磁盘能做到 0.05ms 每 b
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2022-06-30 09:26" pubdate>
+              2022-06-30
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E7%B4%A2%E5%BC%95/" class="category-chain-item">索引</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E7%B4%A2%E5%BC%95/">#索引</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h1 class="index-header">
+        
+          <i class="index-pin  " title="Pin on top"></i>
+        
+        <a href="/2022/06/29/%E6%95%B0%E6%8D%AE%E5%BA%93%E7%A3%81%E7%9B%98%E5%AD%98%E5%82%A8/" target="_self">
+          关系型数据库磁盘存储
+        </a>
+      </h1>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/06/29/%E6%95%B0%E6%8D%AE%E5%BA%93%E7%A3%81%E7%9B%98%E5%AD%98%E5%82%A8/" target="_self">
+        <div>
+          前言本文主要介绍关系型数据库的一张表在磁盘中是如何存储的。 绝大多数数据库系统将一张表（relation）存储在一个或多个文件中（file），由于 file 可能很大，为方便元组（tuple，也称 record）的增删改查，file 内部又被分为了多个 page（或 block，一般 4KB-8KB），真正的元组存储在 block 中。同时 block 也是内存和磁盘之间的数据传输单位。 以上的结
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2022-06-29 18:43" pubdate>
+              2022-06-29
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E6%96%87%E4%BB%B6%E5%AD%98%E5%82%A8/">#数据库文件存储</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h1 class="index-header">
+        
+          <i class="index-pin  " title="Pin on top"></i>
+        
+        <a href="/2022/06/29/%E7%B4%A2%E5%BC%95%E7%AF%87%E4%BA%8C%EF%BC%9AB-plus%20Tree/" target="_self">
+          索引篇二：B-plus Tree
+        </a>
+      </h1>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/06/29/%E7%B4%A2%E5%BC%95%E7%AF%87%E4%BA%8C%EF%BC%9AB-plus%20Tree/" target="_self">
+        <div>
+          B+ Tree 的结构如图 1 所示，B+ 树的每个节点包含 $n-1$ 个 search-key value，$K_1, K_2, …, K_{n-1}$，和 $n$ 个指针，$P_1, P_2, …, P_n$. 这些 search-key value 在节点中按序存储，即若 $i &lt; j$, 有 $K_i &lt; K_j$. 在实际中 search-key value 是可能存在重复
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2022-06-29 18:41" pubdate>
+              2022-06-29
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E7%B4%A2%E5%BC%95/" class="category-chain-item">索引</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E7%B4%A2%E5%BC%95/">#索引</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h1 class="index-header">
+        
+          <i class="index-pin  " title="Pin on top"></i>
+        
+        <a href="/2022/06/29/%E7%B4%A2%E5%BC%95%E7%AF%87%E4%B8%80%EF%BC%9A%E5%93%88%E5%B8%8C%E7%B4%A2%E5%BC%95/" target="_self">
+          索引篇一：哈希索引
+        </a>
+      </h1>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/06/29/%E7%B4%A2%E5%BC%95%E7%AF%87%E4%B8%80%EF%BC%9A%E5%93%88%E5%B8%8C%E7%B4%A2%E5%BC%95/" target="_self">
+        <div>
+          哈希函数本节内容是，如何选择一个好的哈希函数。一个理想的哈希函数能够将 search key 的值均匀地映射到各个 bucket 中，很多时候无法提前预知 search key 会取哪些值，所以功夫主要在哈希函数的选择上，一般就可能要具有如下的特质：  映射均匀。尽管无法精确知道 search key 会取哪些值，但可以能预知所有可能的取值（比如具有长度上限的字符串，整数等），那么只要保证该哈希函
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2022-06-29 18:40" pubdate>
+              2022-06-29
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E7%B4%A2%E5%BC%95/" class="category-chain-item">索引</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E5%8F%AF%E6%8B%93%E5%B1%95%E5%93%88%E5%B8%8C/">#可拓展哈希</a>
+            
+              <a href="/tags/%E7%B4%A2%E5%BC%95/">#索引</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h1 class="index-header">
+        
+          <i class="index-pin  " title="Pin on top"></i>
+        
         <a href="/2022/06/25/%E4%B8%A4%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4%E5%8D%8F%E8%AE%AE/" target="_self">
           事务篇五：两阶段提交协议
         </a>
@@ -595,170 +849,6 @@
               <a href="/tags/TinyKV/">#TinyKV</a>
             
           </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h1 class="index-header">
-        
-          <i class="index-pin  " title="Pin on top"></i>
-        
-        <a href="/2022/06/14/raft-%E6%9D%82%E8%AE%B0/" target="_self">
-          Raft 算法问答录
-        </a>
-      </h1>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/06/14/raft-%E6%9D%82%E8%AE%B0/" target="_self">
-        <div>
-          前言前段时间学习了 CMU-15445 的课程，也写完了 project，了解了数据库内核的基本知识。这段时间在做 TinyKV，刚好看了 raft，细节很多，所以来总结下。 关于 raft 网上有很多资料：raft 小论文raft 博士论文raft 博客etcd raft 实现 所以，这里并不是对 raft 算法本身的细节记录（可能存在部分），而是自己阅读、实现时的一些疑问和解答。 看完 raf
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2022-06-14 19:31" pubdate>
-              2022-06-14
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" class="category-chain-item">分布式</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/raft/">#raft</a>
-            
-              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%B8%80%E8%87%B4%E6%80%A7%E5%8D%8F%E8%AE%AE/">#分布式一致性协议</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h1 class="index-header">
-        
-        <a href="/2022/07/15/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9ASelection%20%E6%93%8D%E4%BD%9C/" target="_self">
-          查询处理篇：Selection 操作
-        </a>
-      </h1>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/07/15/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9ASelection%20%E6%93%8D%E4%BD%9C/" target="_self">
-        <div>
-          假设一张表的所有记录都存储在一个文件中，并且该文件的 block 都连续存储，这样计算起来简单些 ^_^  本文研究选择操作 $\sigma_{expression}$，下面分各种情况介绍操作的执行过程和代价。 如果采用线性扫描*线性扫描也就是从文件的第一个 block 开始，读取每一条记录，判断它是否满足选择条件（$expression$），这种方法的好处是在任何情况下都可以用，虽然可能性能不
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2022-07-15 14:29" pubdate>
-              2022-07-15
-            </time>
-          </div>
-        
-        
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h1 class="index-header">
-        
-        <a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9AJoin%20%E6%93%8D%E4%BD%9C/" target="_self">
-          查询处理篇：Join 操作
-        </a>
-      </h1>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9AJoin%20%E6%93%8D%E4%BD%9C/" target="_self">
-        <div>
-          
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2022-07-01 16:21" pubdate>
-              2022-07-01
-            </time>
-          </div>
-        
-        
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h1 class="index-header">
-        
-        <a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9ASorting/" target="_self">
-          查询处理篇：Sorting
-        </a>
-      </h1>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9ASorting/" target="_self">
-        <div>
-          
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2022-07-01 16:20" pubdate>
-              2022-07-01
-            </time>
-          </div>
-        
-        
         
       </div>
     </article>
