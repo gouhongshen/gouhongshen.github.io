@@ -24,7 +24,7 @@
 <meta property="og:description" content="前言本文内容来自 database system concepts 第七版第十七章，主要是大概介绍事务的基本概念。更进一步的内容会引用其他文章，所以该文相当于一篇索引。 单机事务部分（local transactions）： 事务篇二：事务的可串行化   事务篇三：事务的并发控制  事务篇四：Log-Based Recovery System     分布式事务部分（global transact">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2022-06-22T02:34:31.000Z">
-<meta property="article:modified_time" content="2022-07-01T07:42:12.434Z">
+<meta property="article:modified_time" content="2022-07-20T01:16:37.200Z">
 <meta property="article:author" content="gouhongshen">
 <meta property="article:tag" content="事务">
 <meta property="article:tag" content="数据库">
@@ -315,7 +315,7 @@
 <p>对于，原子性和持久化还有一个部分需要注意：外部可见更新（observable external writes），如更新显示到屏幕、发送邮件或者网上购物等场景。如果事务半途中断，这些更新难以撤回。一般的解决方法是，先将更新存储到数据库的某个地方，等到事务提交后，在将这些更新应用到外部，另外，如果系统在事务提交后，应用更新到外部之前崩溃，那么等到系统重启后依然可以应用更新到外部。</p>
 <h2 id="Transaction-Isolation"><a href="#Transaction-Isolation" class="headerlink" title="Transaction Isolation"></a>Transaction Isolation</h2><p>SQL 标准将隔离级别（isolation level）分为四类：</p>
 <p><strong>可串行化-serializable</strong>，即事务之间的执行顺序可串行化，其结果等价于串行执行，能够保证数据库的一致性。该隔离级别允许一定程度的并发，属于最高的隔离级别。一般，数据库为了提升性能，实现时不会完全遵循其标准。关于串行化的定义，可以参见文章：<a href="/2022/06/22/%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%8F%AF%E4%B8%B2%E8%A1%8C%E5%8C%96/" title="事务的串行化定义">事务的串行化定义</a>。</p>
-<p><strong>可重复读-repeatable read</strong>，该级别规定了两点：1）只读已经提交了的数据；2）在事务执行期间多次读取一个数据之间，不允许其他任何事务更新该数据。该隔离级别保证了在<u>一个事务中，多次读取同一个数据，总会得到同样的值</u>。但注意，这里只是规定了不允许更新已存在的数据，对于其他事务插入新的数据却未做规定，这就导致了，遵循该级别的事务在两次读取中，有可能第二次读取的数据中有一些不存在于第一次读取中的新数据（共同拥有的数据还是相同的），即幻读，若使用快照隔离提供稳定的视图，则不会出现幻读。</p>
+<p><strong>可重复读-repeatable read</strong>，该级别规定了两点：1）只读已经提交了的数据；2）在事务执行期间多次读取一个数据的时间内，不允许其他任何事务更新该数据。该隔离级别保证了在<u>一个事务中，多次读取同一个数据总会得到同样的值</u>。但注意，这里只是规定了不允许更新已存在的数据，对于其他事务插入新的数据却未做规定，这就导致了，遵循该级别的事务在两次读取中，有可能第二次读取的数据中有一些不存在于第一次读取中的新数据（共同拥有的数据还是相同的），即幻读，若使用快照隔离提供稳定的视图，则不会出现幻读。</p>
 <p><strong>读已提交-read committed</strong>，该级别比上一级别更弱，由上一级别的叙述可知，遵循该级别的事务在两次读取同一数据，这两次的数据可能不同，因为其他事务在这段时间内更新了该数据，即不可重复读。</p>
 <p><strong>读未提交-read uncommitted</strong>，这是最低的级别了，该级别甚至允许一个事务读取另外一个事务的中间结果，即脏读。</p>
 <p>解释下读已提交&#x2F;未提交中的提交的含义：提交是指事务的提交。假设有两个事务： TA 读取数据 S，TB 修改数据 S。读未提交允许 TA 读取被 TB 修改了的数据 S，尽管 TB 还未提交。这里存在的可能隐患是，若 TB 失败终止了，所有修改都会回滚，也就是说，TA 读取到了无效的值。</p>
@@ -378,7 +378,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/%E4%BA%8B%E5%8A%A1/" class="category-chain-item">事务</a>
+  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
   
   
 
@@ -388,7 +388,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
+  <a href="/categories/%E4%BA%8B%E5%8A%A1/" class="category-chain-item">事务</a>
   
   
 

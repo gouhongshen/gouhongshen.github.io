@@ -28,7 +28,7 @@
 <meta property="og:image" content="http://example.com/img/concurrency-control/snapshot-isolation-1.jpg">
 <meta property="og:image" content="http://example.com/img/concurrency-control/snapshot-isolation-2.jpg">
 <meta property="article:published_time" content="2022-06-22T08:29:21.000Z">
-<meta property="article:modified_time" content="2022-07-17T02:39:34.403Z">
+<meta property="article:modified_time" content="2022-07-20T02:43:31.555Z">
 <meta property="article:author" content="gouhongshen">
 <meta property="article:tag" content="事务">
 <meta property="article:tag" content="mvcc">
@@ -229,7 +229,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          5.9k 字
+          6k 字
         
       </span>
     
@@ -240,7 +240,7 @@
         
         
         
-          66 分钟
+          67 分钟
         
       </span>
     
@@ -345,7 +345,11 @@
 <p><font color=dark-green>如何保证 recoverable 和 cascadeless？</font><br>这里引入两种升级版两阶段加锁协议，一步到位之间使得满足这些协议的调度满足 cascadeless（自然就满足了 recoverable）。</p>
 <p><strong>Strict Two-Phase Locking Protocol</strong>:<br>在基础版两阶段加锁协议上，增加了这样一条要求，所有的 exclusive-mode lock 必须要等到事务提交之后再释放。</p>
 <p><strong>Rigorous Two-Phase Locking Protocol</strong>：<br>在基础版两阶段加锁协议上，增加了这样一条要求，所有的 lock 必须要等到事务提交之后再释放。</p>
-<p>依据 cascadeless 的定义，它们显然满足。这两种方式被广泛用于商业数据库系统中，也就是锁的释放通常要等到事务完成（提交或终止）。</p>
+<p>解释下为什么满足 cascadeless：</p>
+<blockquote>
+<p>cascadeless 要求，若事务 A 依赖事务 B（事务 A 读取了事务 B 所做的更新），事务 A 必须要等事务 B 体提交后才能执行依赖的操作，由于事务 B 会拥有排它锁直到提交，自然就满足了这个要求。</p>
+</blockquote>
+<p>这两种方式被广泛用于商业数据库系统中，也就是锁的释放通常要等到事务完成（提交或中止）。</p>
 <br>
 
 <p><font color=dark-green>如何处理死锁？</font><br>事务存在循环等待即进入了死锁，处理死锁一般有两种思路，这两种思路都会涉及到事务的回滚：</p>
@@ -380,9 +384,9 @@
 <p><font color=dark-green>实现细节</font><br>该协议给进入系统的每个事务两个时间戳：</p>
 <ul>
 <li><u>startTS</u>. 在事务开始时获取</li>
-<li><u>commitTS</u>. 在事务准备写入更新到数据库的时间（或者是开始验证阶段的时间）</li>
+<li><u>commitTS</u>. 在事务准备写入更新到数据库时获取（或者是开始验证阶段时获取）</li>
 </ul>
-<p>每个被更新的数据都带有一个时间戳（即数据的版本号），即执行该更新事务的 commitTS，也就是说同一份数据可能存在多个版本。时间可以是系统时间，也可以是逻辑时间（计数器），只要保证不会存在相同的时间戳即可。</p>
+<p>每个被更新的数据都带有一个时间戳（即数据的版本号），它等于执行该更新事务的 commitTS，也就是说同一份数据可能存在多个版本。时间可以是系统时间，也可以是逻辑时间（计数器），只要保证不会存在相同的时间戳即可。</p>
 <p>当一个事务 TA 读取一个数据时，读取到的数据具有这样的特点：在所有版本号小于等于 startTS(TA) 的数据中具有<strong>最大的版本号</strong>。从事务角度理解，一个事务看不到，任何在该事务开始之后提交的事务所作的更新。</p>
 <br>
 
@@ -394,7 +398,7 @@
 </ul>
 <p><strong>第一种方法称为 first committer wins</strong>. 假设同一时间只有一个事务在验证。当事务 TA 准备写入更新时，执行如下步骤：</p>
 <ol>
-<li><u>检测是否存在冲突</u>。检查 TA 更新的每一个数据，看是某个数据否存在一个版本号落在 [startTS(TA), commitTS(TA)].</li>
+<li><u>检测是否存在冲突</u>。检查 TA 更新的每一个数据，看某个数据是否存在一个版本号落在 [startTS(TA), commitTS(TA)].</li>
 <li><u>若有</u>，则 TA abort.</li>
 <li><u>若无</u>，正常写入更新和后续步骤，比如提交。</li>
 </ol>
@@ -415,9 +419,9 @@
 <ul>
 <li>从数据库中读时，只会读到已经提交了的数据，即<u>没有脏读（dirty read）</u></li>
 <li>写入数据库时，只会覆盖已经写入的数据，即<u>没有脏写（dirty write）</u></li>
-<li>可能发送不可重复读异常</li>
+<li>可能发生不可重复读异常</li>
 </ul>
-<p><strong>何为脏读？</strong>能读取到尚未 commit&#x2F;abort 事务所做的更新，就叫脏读。脏读可能引发只能看到部分更新的问题，比如转账，很可能会出现账户余额蒸发的怪现象。</p>
+<p><strong>何为脏读？</strong>能读取到尚未 commit&#x2F;abort 事务所做的更新，就叫脏读。脏读可能引发只能看到部分更新的问题，比如转账事务提交前就读取余额，很可能会出现账户余额蒸发的怪现象。</p>
 <p><strong>何为脏写？</strong>当两个事务更新同一对象时，通常后者会覆盖前者所做的更新，但若是覆盖的是尚未 commit&#x2F;abort 事务的更新，就叫做脏写。脏写同样会产生问题，考虑自动发送邮件例子，一个事务刚刚填入收件人地址，还未提交，另一个事务却覆盖了这个邮件地址，邮件就会发往错误的地方。</p>
 <p>一般数据库通过行锁（row-level lock）<strong>防止脏写</strong>。当事务想要修改特定对象时，它必须首先获得该对象的排它锁，持有到事务提交或中止。可以通过读锁<strong>防止脏读</strong>，然而该方法中，写事务会阻塞读事务，所以数据库通常会为数据保留一个最近的旧值，和正在更新的新值，若新值还未提交，任何读事务都会拿到旧值，若新值提交了，就会读到新值（发生不可重复读异常）。</p>
 <br>

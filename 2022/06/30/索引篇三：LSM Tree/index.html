@@ -25,7 +25,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://example.com/img/LSM/1.jpg">
 <meta property="article:published_time" content="2022-06-30T01:26:48.000Z">
-<meta property="article:modified_time" content="2022-07-12T01:21:31.304Z">
+<meta property="article:modified_time" content="2022-07-18T11:15:30.400Z">
 <meta property="article:author" content="gouhongshen">
 <meta property="article:tag" content="索引">
 <meta name="twitter:card" content="summary_large_image">
@@ -293,7 +293,7 @@
 <blockquote>
 <p><strong>为什么要合并呢？</strong>考虑查询操作，当要某条数据时（借助 search key），按照上面所述的步骤，查询过程应该是这样的：先查询 $L_0$，不中，再依次查询 $L_1^1,\ L_1^2,\ …$ 若还是不中，继续查询 $L_2^1,\ L_2^2,\ …$ 也就是说查询一条数据可能会搜索多颗 B+ 树。<u>为了限制查找开销，有两点优化，其一便是合并</u>，将若干个上一层的树合并成下一层的一个较大的树，这样原本会查询多颗小树的操作就只需要查询一颗更矮更胖的大树。<u>另外一个优化是使用布隆过滤器（bloom filter）</u>。尽管合并在一定程度上降低了查询开销，但仍旧不能避免在某一层需要检索多颗 B+ 树。布隆过滤器能够给出某个集合（这里就是一颗 B+ 树）中包含包含某一个 search key 的概率：若判断包含，则有一定概率不存在（假阳性），若判断不存在，那一定不存在。所以，可以为每颗 B+ 树分配一个布隆过滤器，查询时可以跳过一些树。布隆过滤器建立在 search key value 上，如果一棵树包含 $n$ 个 search key value，布隆过滤器大小为 $10n\ bits$，使用 7 个哈希函数，那么假阳性约为 $\frac{1}{100}$，也就是能跳过大量无效查询，开销略微高于常规的 B+ 树索引。<u>但是，对于范围查询</u>，布隆过滤器无能为力，还是需要检索每棵树判断是否有在范围内的数据。</p>
 </blockquote>
-<p>在合并 $L_i$ 层时，先顺序读取 $L_i$ 层每棵树的叶子节点，然后将这些数据按照 search key value 的顺序合并，最后在上面以 bottom-up construction 的方式构建一颗 $L_{i+1}$ 的树。很明显，合并过程没有多余的随机 I&#x2F;O 读写，$L_i$ 的每棵树是按顺序从左至右读取每个叶子节点，合并时采用的排序算法（见 <a href="#">Post not found: 查询处理篇：排序</a>）也没有多余的随机读写，构建下一层树时，也是顺序读写。</p>
+<p>在合并 $L_i$ 层时，先顺序读取 $L_i$ 层每棵树的叶子节点，然后将这些数据按照 search key value 的顺序合并，最后在上面以 bottom-up construction 的方式构建一颗 $L_{i+1}$ 的树。很明显，合并过程没有多余的随机 I&#x2F;O 读写，$L_i$ 的每棵树是按顺序从左至右读取每个叶子节点，合并时采用的排序算法（见 <a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9ASorting/" title="查询处理篇：Sorting">查询处理篇：Sorting</a>）也没有多余的随机读写，构建下一层树时，也是顺序读写。</p>
 <p><u>可以使用写放大（write amplification）指标来衡量 LSM 和 B+ 树的磁盘写开销</u>。当插入一条数据时，需要写磁盘的总数据量（bytes）除以单条数据的大小，其值就是写放大。写放大衡量的主要是，当更新一条数据时，需要多少额外的写开销，若写放大为 10，那么更新一条数据，平均需要引起 10 条数据的写磁盘。</p>
 <p><u>对于 B+ 树索引</u>，假设每个叶子节点写回磁盘前平均有 $x$ 次更新，那么写放大为，叶子节点的字节数（block 大小）除以 $x$ 条数据的字节数。假设一个 block 能够容纳 100 条数据，那么写放大为 $\frac{100}{x}$. <u>对于 LSM</u>，若 $k &#x3D; 5$，$L_0$ 的数据条数为 $M$，所有层总共的数据条数为 $I$，且 $100 &#x3D; \frac{I}{M}$. 那么该 LSM 大概有 $log_5(\frac{I}{M}) &#x3D; 3$ 层，写放大也就为 3，因为同一条数据只会在一层写入一次：写入 $L_1$ 层的一次来自 $L_0$，写入 $L_2$ 层的一次来自 $L_1$ 层的合并……</p>
 <p><font color=dark-green>LSM 的删除操作</font><br>一般来说，删除一条数据首先是找到它，然后再删除它，LSM 并不采用这种方式，而是通过<u>插入删除标记（deletion entry）</u>的方式来标记某条数据已经被删除了。因此 LSM 的删除操作过程和插入过程一致，只不过插入的是一条 deletion entry. </p>
