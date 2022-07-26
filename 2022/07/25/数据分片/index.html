@@ -16,28 +16,24 @@
   <meta name="author" content="gouhongshen">
   <meta name="keywords" content="">
   
-    <meta name="description" content="join 实际上是连接操作（concatenation），表 r 和 s 之间的 join 可以表示为 $r \bowtie_{\theta} s$，$\theta$ 表示连接的条件，有等于、大于、小于和自然连接几种，本文中不做区分，只讨论 join 操作的实现方式。 为了方便计算，考虑有 student 和 takes 两张表，需要执行它们的 join 操作，即 $student \bowtie">
+    <meta name="description" content="数据分片又叫数据分区（data partitioning），指的是将一个数据集分成多个部分分开存储在不同的磁盘或者机器，这些分片在实践中表现为一个个小数据库，为了与节点&#x2F;网络故障导致的分区相区别，之后本文统称为分片。 对于关系型数据库，数据以表的形式存储，因此数据分片又分为两种：  水平分片（horizontal partitioning），以元组为单位，若干个元组构成一个分片。 垂直分">
 <meta property="og:type" content="article">
-<meta property="og:title" content="查询处理篇：Join 操作">
-<meta property="og:url" content="http://example.com/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9AJoin%20%E6%93%8D%E4%BD%9C/index.html">
+<meta property="og:title" content="数据分片">
+<meta property="og:url" content="http://example.com/2022/07/25/%E6%95%B0%E6%8D%AE%E5%88%86%E7%89%87/index.html">
 <meta property="og:site_name" content="Gou&#39;s Blog">
-<meta property="og:description" content="join 实际上是连接操作（concatenation），表 r 和 s 之间的 join 可以表示为 $r \bowtie_{\theta} s$，$\theta$ 表示连接的条件，有等于、大于、小于和自然连接几种，本文中不做区分，只讨论 join 操作的实现方式。 为了方便计算，考虑有 student 和 takes 两张表，需要执行它们的 join 操作，即 $student \bowtie">
+<meta property="og:description" content="数据分片又叫数据分区（data partitioning），指的是将一个数据集分成多个部分分开存储在不同的磁盘或者机器，这些分片在实践中表现为一个个小数据库，为了与节点&#x2F;网络故障导致的分区相区别，之后本文统称为分片。 对于关系型数据库，数据以表的形式存储，因此数据分片又分为两种：  水平分片（horizontal partitioning），以元组为单位，若干个元组构成一个分片。 垂直分">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="http://example.com/img/join_op/1.jpg">
-<meta property="og:image" content="http://example.com/img/join_op/2.jpg">
-<meta property="og:image" content="http://example.com/img/join_op/3.jpg">
-<meta property="og:image" content="http://example.com/img/join_op/4.jpg">
-<meta property="og:image" content="http://example.com/img/join_op/5.jpg">
-<meta property="og:image" content="http://example.com/img/join_op/6.jpg">
-<meta property="article:published_time" content="2022-07-01T08:21:19.000Z">
-<meta property="article:modified_time" content="2022-07-25T02:03:21.447Z">
+<meta property="og:image" content="http://example.com/img/data_partitioning/1.jpg">
+<meta property="og:image" content="http://example.com/img/data_partitioning/2.jpg">
+<meta property="article:published_time" content="2022-07-25T02:04:26.000Z">
+<meta property="article:modified_time" content="2022-07-25T13:50:27.070Z">
 <meta property="article:author" content="gouhongshen">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="http://example.com/img/join_op/1.jpg">
+<meta name="twitter:image" content="http://example.com/img/data_partitioning/1.jpg">
   
   
   
-  <title>查询处理篇：Join 操作 - Gou&#39;s Blog</title>
+  <title>数据分片 - Gou&#39;s Blog</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -204,7 +200,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="查询处理篇：Join 操作"></span>
+            <span id="subtitle" data-typed-text="数据分片"></span>
           
         </div>
 
@@ -215,8 +211,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-07-01 16:21" pubdate>
-          2022年7月1日 下午
+        <time datetime="2022-07-25 10:04" pubdate>
+          2022年7月25日 上午
         </time>
       </span>
     
@@ -227,7 +223,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          5.6k 字
+          5.5k 字
         
       </span>
     
@@ -284,69 +280,84 @@
         <div id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">查询处理篇：Join 操作</h1>
+            <h1 style="display: none">数据分片</h1>
             
             <div class="markdown-body">
               
-              <p>join 实际上是连接操作（concatenation），表 r 和 s 之间的 join 可以表示为 $r \bowtie_{\theta} s$，$\theta$ 表示连接的条件，有等于、大于、小于和自然连接几种，本文中不做区分，只讨论 join 操作的实现方式。</p>
-<p>为了方便计算，考虑有 student 和 takes 两张表，需要执行它们的 join 操作，即 $student \bowtie takes$. 同时这两张表具有如下的特点：</p>
-<blockquote>
-<p>student 表的记录数量 $n_{student} &#x3D; 5000$<br>student 表文件的 block 数量 $b_{student} &#x3D; 100$<br>takes 表的记录数量 $n_{takes} &#x3D; 10,000$<br>takes 表文件的 block 数量 $b_{takes} &#x3D; 400$</p>
-</blockquote>
-<h3 id="Nested-Loop-Join-算法"><a href="#Nested-Loop-Join-算法" class="headerlink" title="Nested-Loop Join 算法"></a>Nested-Loop Join 算法</h3><p>该算法的伪代码为：<br><img src="/img/join_op/1.jpg" srcset="/img/loading.gif" lazyload></p>
-<p>该算法非常简单易懂，<u>在最坏的情况下</u>，每个表只分配一个 buffer block，那么总共需要传输 $n_r * b_s + b_r$ 个 block，对于外层表 r 的每一条记录都需要完整地扫描一遍内层表 s，如果每个表文件的所有 block 都按顺序存储，那么总共需要 $n_r + b_r$ 次随机 I&#x2F;O. <u>在最好的情况下</u>，两张表都能放在内存，那么总共需要传输 $b_s + b_r$ 个 block，2 次随机 I&#x2F;O.</p>
-<p>很明显，如果某个表能够完全放入内存中，应该将它放在算法的内层，其代价和两个表都能放进内存时一样。如果都不能，将较小的表放在外层较好。</p>
-<p>现在应用上述算法到上面的例子，<u>假设 student 在外层，takes 在内层</u>：</p>
+              <p>数据分片又叫数据分区（data partitioning），指的是将一个数据集分成多个部分分开存储在不同的磁盘或者机器，这些分片在实践中表现为一个个小数据库，为了与节点&#x2F;网络故障导致的分区相区别，之后本文统称为分片。</p>
+<p>对于<u>关系型数据库</u>，数据以表的形式存储，因此数据分片又分为两种：</p>
 <ul>
-<li>最坏情况下，需要传输 $5000*4000+100&#x3D;2000100$ 个 block，$5000+100&#x3D;5100$ 次随机 I&#x2F;O. </li>
-<li>最好情况下，需要传输 $100+400&#x3D;500$ 个 block，2 次随机 I&#x2F;O.</li>
+<li>水平分片（horizontal partitioning），以元组为单位，若干个元组构成一个分片。</li>
+<li>垂直分片（vertical partitioning），又称为列式存储，以列为单位，若干个列构成一个分片。</li>
 </ul>
-<p><u>假设 takes 在外层，student 在内层</u>：</p>
+<p>对于非关系型数据库，自然就没有这些区分了。本文主要讨论水平分片，内容同样适用于非关系型数据。</p>
+<p><u>数据分片是为了啥</u>？主要是为了伸缩性。数据分片后访问数据的操作就可以并行，可以通过增加机器的数量来提高并行度和吞吐量、均衡各个机器的负载。数据备份通常是为了提高容错，而备份的单位通常是分片。</p>
+<h3 id="数据分片方法"><a href="#数据分片方法" class="headerlink" title="数据分片方法"></a>数据分片方法</h3><p>访问数据一般有以下三种方式：</p>
 <ul>
-<li>最坏情况下，需要传输 $10000*100+400&#x3D;1000400$ 个 block，$10000+400&#x3D;10400$ 次随机 I&#x2F;O.</li>
-<li>最好情况下，需要传输 $100+400&#x3D;500$ 个 block，2 次随机 I&#x2F;O.</li>
+<li>扫描整个数据集（所有分片的集合）</li>
+<li>定位某一条数据，被称为单点查询，给定一个属性值，查询一条具体的数据。</li>
+<li>范围查询，给定一个属性值的区间，查询所有相应属性值落在该区间的所有数据。</li>
 </ul>
-<h3 id="Block-Nested-Loop-Join-算法"><a href="#Block-Nested-Loop-Join-算法" class="headerlink" title="Block Nested-Loop Join 算法"></a>Block Nested-Loop Join 算法</h3><p>该算法的伪代码如下：<br><img src="/img/join_op/2.jpg" srcset="/img/loading.gif" lazyload><br>基础的 nested-loop join 算法中，对于外层表的每一条记录就会完整遍历一次内层表，而在 block nested-loop join 算法中，对这一点做了改进：对于外层的每一个 block，访问一次内层表，如上图。</p>
-<p><u>在最坏的情况下</u>，每个表只能各有一个 block 驻留内存，对于外层的每一个 block，内层表的每个 block 只需要访问一次，再加上外层表的 block 数量，所以总共需要传输 $b_r * b_s + b_r$ 个 block. 在每一个外层的 block 需要随机 I&#x2F;O 一次内层表（block 连续存储），再加上外层表的每一个 block 需要随机 I&#x2F;O 一次，所以总共需要 $2 * b_r$ 次随机 I&#x2F;O. <u>在最好的情况下</u>，两个表都能放在内存，总共需要传输 $b_r + b_s$ 个 block，2 次随机 I&#x2F;O.</p>
-<p>很明显，如果某个表能够完全放入内存中，应该将它放在算法的内层，其代价和两个表都能放进内存时一样。如果都不能，将较小的表放入外层较好。</p>
-<p>现在应用上述算法到上面的例子，<u>假设 student 在外层（较小），takes 在内层</u>：</p>
+<p>在介绍数据分片方法时，也会讨论它们各自在访问数据时的优缺点。假设有 $n$ 个节点，$N_1, N_2, …, N_n$ 用于存储分片，有以下三种方式完成数据分片：</p>
+<p><font color=red>Round-Robin</font>. 该方法以任一顺序扫描每一条数据，将第 $i$ 条数据发送到 $N_{((i-1)\ mod\ n) + 1}$ 节点。 </p>
+<blockquote>
+<p>该方法能够均匀分配数据，使得每个节点都具有相同数量的数据。该方法非常适合按顺序扫描整个数据集，相比于只使用一个节点，扫描整个数据集只需要花费 $\frac{1}{n}$ 的时间，即加速比为 $n$，然而对于单点查询和范围查询就不太又好了，需要查询每一个节点来获取想要的数据。</p>
+</blockquote>
+<p><font color=red>Hash Partitioning</font>. 该方法先确定分片需要的属性，然后将属性值映射到集合 $\{1,2,…,n\}$，然后将数据存储到对应的节点上。</p>
+<blockquote>
+<p>该方案可以说最适合单点查询了，如果查询请求中包含分配属性的值，那么映射后找到对应的节点，然后将请求路由过去就好了，其他不相干的节点就可以同时处理其他的请求。如果哈希函数选取得很好，能够将数据均匀的分配到 $n$ 个节点，那么扫描整个数据集的加速比也能接近 $n$. 该方式对范围查询不友好，需要扫描所有的节点获取想要的数据。</p>
+</blockquote>
+<p><font color=red>Range Partitioning</font>. 该方法先确定属性，然后将属性值划分为多个区间，处于不同区间的属性值存储在不同的节点上。</p>
+<blockquote>
+<p>先确定属性（设为 $A$），和一个分片向量（partitioning vector）$[v_1,v_2,…,v_{n-1}]$，然后按照这样的方式分片：考虑一条数据 $t,\ t[A] &#x3D; x$，如果 $x &lt; v_1$，则将 $t$ 存储在 $N_1$；如果 $x &gt;&#x3D; v_{n-1}$，则 $t$ 存储在 $N_n$；如果 $v_i &lt;&#x3D; t &lt; v_{i+1}$，则 $t$ 存储在 $N_{i+1}$，如下图：<br><img src="/img/data_partitioning/1.jpg" srcset="/img/loading.gif" lazyload><br>该方式对单点查询和范围查询都很友好。</p>
+</blockquote>
+<h3 id="处理数据倾斜（skew）"><a href="#处理数据倾斜（skew）" class="headerlink" title="处理数据倾斜（skew）"></a>处理数据倾斜（skew）</h3><p>除了 Round-Robin 方法，任何一种数据分片方法都不能阻止数据倾斜的存在，<u>数据倾斜是指</u>：一些分片中具有非常多的数据，而另外一些分片中的数据量却很少，被称为 data distribution skew，一般是由如下原因产生的：</p>
 <ul>
-<li>最坏情况下，需要传输 $100 * 400+100&#x3D;40100$ 个 block，$2*100&#x3D;200$ 次随机 I&#x2F;O.</li>
-<li>最好情况下，需要传输 $100+400&#x3D;500$ 个 block，2 次随机 I&#x2F;O.</li>
+<li>属性值的分布本身就不均匀（Attribute-Value Skew）。数据分片需要确定属性，而该属性的取值可能就存在倾斜，比如大学成员年龄就大多分布在[20, 30].</li>
+<li>因为方法选择不当导致数据倾斜（Partitioning Skew）。对于范围分片来说，如果分片向量选择不当，就可能导致数据倾斜；又如哈希函数选择不当时，也会有数据倾斜。</li>
 </ul>
-<p>和 nested-loop join 相比，最坏情况下的代价大幅减少，最好情况两种一致。nested-loop join 和 block nested-loop join 两个算法通过<u>以下方式还能提升其性能</u>：</p>
-<ul>
-<li>如果 join 条件是在内层表主键&#x2F;候选键上的等值连接，那么内层循环就能在第一条匹配记录找到后结束。</li>
-<li>block nested-loop join 算法中 nested-loop 的单位是 block，如果增大这个单位，代价就能进一步减少。假设有 $M$ 个 buffer block，给外层表分配 $M-2$ 个，内层表一个，那么内层表的扫描次数就会从 $b_r$ 降到 $\lceil b_r &#x2F;(M-2) \rceil$. </li>
-<li>buffer block 淘汰是有策略的，如果使用的是 LRU，那么可以采用电梯扫描的方法，尽快复用那些还没换出内存的 block.</li>
-<li>如果内层表在 join 属性上有索引的话，就可以不用文件扫描的方法了。</li>
-</ul>
-<h3 id="Indexed-Nested-Loop-Join"><a href="#Indexed-Nested-Loop-Join" class="headerlink" title="Indexed Nested-Loop Join"></a>Indexed Nested-Loop Join</h3><p>这一部分附上原文：</p>
 <blockquote>
-<p>In a nested-loop join, if an index is available on the inner loop’s join attribute, index lookups can replace file scans. For each tuple $t_r$ in the outer relation r,<br>the index is used to look up tuples in s that will satisfy the join condition with tuple $t_r$. This join method is called an indexed nested-loop join; it can be used with existing indices, as well as with temporary indices created for the sole purpose of evaluating the join.</p>
+<p>数据分片的初衷是提升并行度和减少单个节点的负载，然而就算是数据在多个分片中存在少许的倾斜，对加速比的影响都很大（<strong>后续会写一篇关于并行系统加速比的文章</strong>）。考虑这样一个例子，如果数据集有 1000 条数据，将其分成 10 个分片，如果存在数据倾斜，那么有的分片会多于 100 条数据，有的会少于 100 条。假如某一个分片有 200 条数据，如果按照最长处理时间，那么加速比就只有 5，而不是理想的 10.<br>另外除了以上的数据分布倾斜外，还可能有处理倾斜（execution skew），即请求特别偏爱某些数据，导致某些节点的负载很高。<u>对于处理倾斜</u>，可以通过为每个分片复制多个备份来减轻负载，如果操作大多局限于某些列，那么可以采用垂直分片，减少不必要的列数据传输。</p>
+</blockquote>
+<br>
+
+<p>下面将介绍一些处理倾斜的方法。</p>
+<p><u>第一种方法是 Balanced Range-Partitioning Vectors</u>. 假如数据集的分布已知，那么就可以根据其分布特点设计一个不会产生数据倾斜的分片向量，一般有两种方式：1) 可以先对数据集按照某个属性进行排序，然后再均分数据。2) 方法一显然代价较高，那么可以通过记录属性值的频率或采用构造直方图的方式避免排序。</p>
+<p>上述方法一个很明显的缺点就是它不太灵活，他需要提前知道数据的分布，而且如果随着数据集的增长数据倾斜依然会发生（重新执行分片操作代价昂贵）。</p>
+<br>
+
+<p><u>第二种方法是 Virtual Node Partitioning</u>. 该方法在真实节点之上创建数倍的虚拟节点（virtual node），若干个虚拟节点被映射到同一个真实节点，数据分片时，分片直接对应的就是虚拟节点，除此之外系统需要维护一个映射数据结构：[attribute -&gt; virtual node, virtual node -&gt; real node]，如下图：<br><img src="/img/data_partitioning/2.jpg" srcset="/img/loading.gif" lazyload></p>
+<blockquote>
+<p>采用的是 range partitioning，tablet 就是 virtual node.</p>
+</blockquote>
+<p><u>为什么要多一层虚拟节点呢</u>？这其实增加了灵活性，我们可以动态地记录一个真实节点的数据量和负载，如果某个节点的数据量太多或负载太高，我们就可以将映射到该真实节点的某些虚拟节点迁移到其他负载较小的真实节点上或新节点上，而不会影响到其他的节点和数据，代价较低，最后再修改映射表</p>
+<p>virtual node 的点子不错，<u>还可以再进一步</u>：随着数据集的增长，虚拟节点的数据量或负载会变得很大（高），无论往哪里迁移都是一个很大的负担，迁移的代价也很高，这其实是一个粒度问题。为此就有了下面的方法三。</p>
+<br>
+
+<p><u>第三种方法是 Dynamic Repartitioning</u>. 该方法同样使用 virtual node，不同之处在于，对于数据量太大或负载太高的虚拟节点，该方法选择从中分裂出一个新的虚拟节点，类似 B+ 树的插入和可拓展哈希的分裂操作。新分裂出的虚拟节点就可以迁移到其他的真实节点上，以更小的粒度均衡负载。</p>
+<p>dynamic repartitioning 在分布式数据库和文件存储中用得非常多，如 GFS 和 BigTable，在这些系统中，它们用 table 指代一个数据集，然后一个 table 被分片为若干个 tablets，tablet 对应的其实就是 virtual node. 系统会维护一个 partition table（如上图）记录数据、tablets、真实节点直接的映射关系。partition table 一般会存储多个备份在客户端或 router（未必是路由器）中，下面是一些描述，其实大多数内容在上面已经说过了：</p>
+<blockquote>
+<p>Read requests must specify a value for the partitioning attribute, which is used to identify the tablet which could contain a record with that key value; a request that does not specify a value for the partitioning attribute would have to be sent to all tablets. A read request is processed by using the partitioning key value v to identify the tablet whose range of keys contains v, and then sending the request to the real node where the tablet resides. <u>The request can be handled efficiently at that node by</u> maintaining, for each tablet, an index on the partitioning key attribute.</p>
 </blockquote>
 <blockquote>
-<p>Looking up tuples in s that will satisfy the join conditions with a given tuple $t_r$ is<br>essentially a selection on s. For example, consider $student\bowtie takes$. Suppose that we have a student tuple with ID “00128”. Then, the relevant tuples in takes are those that satisfy the selection “ID &#x3D; 00128”.</p>
+<p>Write, insert, and delete requests are processed similarly, by routing the requests to the correct tablet and real node, using the mechanism described above for reads.</p>
 </blockquote>
 <blockquote>
-<p>The cost of an indexed nested-loop join can be computed as follows: For each tuple in the outer relation r, a lookup is performed on the index for s, and the relevant tuples are retrieved. In the worst case, there is space in the buffer for only one block of r and one block of the index. Then, $b_r$ I&#x2F;O operations are needed to read relation r, where $b_r$ denotes the number of blocks containing records of r; each I&#x2F;O requires a seek and a block transfer, since the disk head may have moved in between each I&#x2F;O. For each tuple in r, we perform an index lookup on s. Then, the cost of the join can be computed as $b_r*(t_T + t_S ) + n_r *c$, where $n_r$ is the number of records in relation r, and c is the cost of a single selection on s using the join condition. We have seen in <a href="/2022/07/15/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9ASelection%20%E6%93%8D%E4%BD%9C/" title="查询处理篇：Selection 操作">查询处理篇：Selection 操作</a> how to estimate the cost of a single selection algorithm (possibly using indices); that estimate gives us the value of c.</p>
+<p>The above scheme allows tablets to be split if they become too big; the key range corresponding to the tablet is split into two, with a <u>newly created tablet getting half the key range</u>. Records whose key range is mapped to the new tablet are then moved from the original tablet to the new tablet. The partition table is updated to reflect the split, so requests are then correctly directed to the appropriate tablet.</p>
 </blockquote>
-<h3 id="Merge-Join-算法"><a href="#Merge-Join-算法" class="headerlink" title="Merge Join 算法"></a>Merge Join 算法</h3><p><u>算法可用于等值和自然连接</u>，其伪代码如下：<br><img src="/img/join_op/3.jpg" srcset="/img/loading.gif" lazyload></p>
-<p>该算法基于这样一个思想：如果参与 join 操作的两个表都已经各自在 join 操作所涉及的属性上有序了，那么完成等值&#x2F;自然连接就只需要各扫描两张表一遍。</p>
-<p>在算法的执行过程中，对于每一个 join 属性值，算法会第一个表维护一个集合 $S_s$，保存了所有具有该 join 属性值的记录，然后对于第二个表的每一条具有该 join 属性值的记录与 $S_s$ 中的所有记录 join 操作。</p>
-<p>假设表已经<u>有序了且每个 $S_s$ 都能放进内存</u>，那么算法共需要传输 $b_r + b_s$ 个 block，如果给每个表分配 $b_b$ 个 buffer block，那么共需要 $\lceil b_r&#x2F;b_b \rceil + \lceil b_s&#x2F;b_b \rceil$ 次随机磁盘 I&#x2F;O. 如果将该算法应用在上面例子上，同时令 $b_b&#x3D;1$，那么共需要传输 $400+100&#x3D;500$ 个 block，$400+100&#x3D;500$ 次随机 I&#x2F;O.</p>
-<p>如果<u>未排序</u>，那么就需要先使用<a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9ASorting/" title="外部排序算法">外部排序算法</a>排序。如果 $S_s$ <u>不能放进内存</u>，那么可以再套一个 block nested-loop join，当然需要加上它们的代价。</p>
-<h3 id="Hash-Join-算法"><a href="#Hash-Join-算法" class="headerlink" title="Hash Join 算法"></a>Hash Join 算法</h3><p><u>为了减少无效的比较次数</u>，除了先排序再 join 和使用索引外，hash 也是一种选择，它的基本思想是这样的：使用同样的哈希函数分别将两个表的元组映射（在 join 属性值上映射）为多个分区（partition），那么具有相同 join 属性值的元组一定会被映射到同一个分区，那么 join 操作只需要在两个表的具有相同下标的分区之间进行就可以了，开始细节描述前，先定义如下的符号：</p>
 <blockquote>
-<p>使用 $h$ 表示哈希函数，将 join 属性值映射为整数 $\{0,1,…,n_h\}$.<br>$\{r_0,r_1,…,r_{n_h}\}$ 是表 r 映射的分区，元组 $t_r$ 将放进 $r_i$，$i&#x3D;h(t_r[JoinAttrVal])$<br>$\{s_0,s_1,…,s_{n_h}\}$ 是表 s 映射的分区，元组 $t_s$ 将放进 $s_i$，$i&#x3D;h(t_s[JoinAttrVal])$</p>
+<p>If a real node gets overloaded, either due to a large number of requests or due to too much data at the node, some of the tablets from the node can be moved to a different real node that has a lower load. <u>Tablets can also be moved similarly</u> in case one of the real nodes has a large amount of data, while another real node has less data. Finally, if a new real node joins a system, some tables can be moved from existing nodes to the new node. Whenever a tablet is moved to a different real node, the partition table is updated; subsequent requests will then be sent to the correct real node.</p>
 </blockquote>
-<p>下面是算法伪代码和示意图：<br><img src="/img/join_op/4.jpg" srcset="/img/loading.gif" lazyload><br><img src="/img/join_op/5.jpg" srcset="/img/loading.gif" lazyload></p>
-<p>比较简单，<u>该算法可以用于等值连接和自然连接</u>。从代码中可以看到，$n_h$ 的选值很重要，如果选的好，那么 build relation（表 s）的每一个分区 $s_i$ 和在其上的 hash index 就都能放进内存，而 probe relation（表 r）的分区可以不做此要求。</p>
-<p>假设当前系统有 $M$ 个空闲 buffer block，build relation 有 $b_s$ 个 block，如果哈希函数能够满足均匀和随机特性，join 属性值会被平均映射到各个分区，为了能让 build relation 的每个分区都能放进内存，那么 $n_h &gt;&#x3D; \lceil b_s&#x2F;M \rceil$.</p>
-<p>很可能算出来的 $n_h$ 过大，build relation 不能一次性完成 partition（因为 buffer block 不够用），那么就需要多次 partition，下面是示意图：<br><img src="/img/join_op/6.jpg" srcset="/img/loading.gif" lazyload><br>图中展示了这样一种情况，为了使 build relation 的某个分区能放进内存，$n_h$ 的最小取值为 9，但空闲 buffer block 只有 3 个，一轮不能将完成全部的映射，所以采用 recursive partitioning.</p>
-<p>其实可以计算，要满足什么样的情况就可以不用 recursive. 当 $M &gt; n_h + 1$ 时，就可以不用，等价地，$M &gt;(b_s&#x2F;M) + 1$，继续可以近似为 $M &gt; \sqrt{b_s}$. 假设空闲 buffer pool 总容量为 12MB，可以分成 3072 个 4KB 的 block，那么这样的 buffer pool 最多能够支撑 3072 * 3072 * 4KB &#x3D; 36GB 的 build relation 映射时不需要 recursive.</p>
-<p><u>那么 hash join 的开销又是多少呢</u>? 假设不需要 recursive partitioning，每个分区都能装进内存。首先，r 和 s 都需要分别读入内存 partition，再然后将分区写回磁盘，这过程需要传输 $2 * (b_r + b_s)$ 个 block. 在 build 和 probe 阶段，所有分区又都需要读入内存一次，这个过程需要传输 $b_r + b_s$ 个 block. 考虑到 partition 后，映射到一个分区的记录不一定能填满一个 block，也就是读入写出分区时，也必须传输没有填充的 block 部分，两个表加起来大约有 $4 * n_h$ 额外的 block（每个分区半满），所以一共需要传输的 block 数量为：<br>$$3 * (b_r+b_s) + 4 * n_h$$</p>
-<p>假设共有 $b_b$ 个 block 分配给 partitioning 阶段，两个表读出和写入共需要 $2(\lceil b_r&#x2F;b_b\rceil + \lceil b_s&#x2F;b_b\rceil)$ 次随机 I&#x2F;O. 在 build 和 probe 阶段，读出（不需要再写入）一个分区需要一次随机 I&#x2F;O，那么对于两个表的所有分区，共需要 $2 * n_h$ 次随机 I&#x2F;O，所有总共的随机 I&#x2F;O 次数为：<br>$$<br>2(\lceil b_r&#x2F;b_b\rceil + \lceil b_s&#x2F;b_b\rceil) + 2 * n_h<br>$$</p>
+<p>看吧，十分灵活。</p>
+<br>
+
+<p><u>第四种方法是使用 Consistent Hashing</u>. 这是一个较大的话题，直接附上原文的描述，有机会再另开一篇文章讨论这个话题：</p>
+<blockquote>
+<p>An alternative fully distributed approach is supported by a hash based partitioning scheme called <u>consistent hashing</u>. In the consistent hashing approach, keys are hashed to a large space, such as 32 bit integers. Further, node (or <u>virtual node</u>) identifiers are also hashed to the same space. A key ki could be logically mapped to the node nj whose hash value $h(n_j)$ is the highest value among all nodes satisfying $h(n_j) &lt; h(k_i)$. But to ensure that every key is assigned to a node, hash values are treated as lying on a cycle similar to the face of a clock, where the maximum hash value maxhash is immediately followed by 0. Then, key ki is then logically mapped to the node $n_j$ whose hash value $h(n_j)$ is the closest among all nodes, when we move anti-clockwise in the circle from $h(k_i)$.</p>
+</blockquote>
+<blockquote>
+<p><u>Distributed hash tables</u> based on this idea have been developed where there is no need for either a master node or a router; instead each participating node keeps track of a few other peer nodes, and routing is implemented in a cooperative manner. New nodes can join the system, and integrate themselves by following specified protocols in a completely peer-to-peer manner, without the need for a master. </p>
+</blockquote>
 
               
             </div>
@@ -363,8 +374,8 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>查询处理篇：Join 操作</div>
-      <div>http://example.com/2022/07/01/查询处理篇：Join 操作/</div>
+      <div>数据分片</div>
+      <div>http://example.com/2022/07/25/数据分片/</div>
     </div>
     <div class="license-meta">
       
@@ -376,7 +387,7 @@
       
         <div class="license-meta-item license-meta-date">
           <div>发布于</div>
-          <div>2022年7月1日</div>
+          <div>2022年7月25日</div>
         </div>
       
       
@@ -406,9 +417,9 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9A%E6%80%BB%E8%AE%BA/" title="查询处理篇：总论">
+                      <a href="/2022/07/25/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E7%9A%84-Debug/" title="分布式系统的 Debug">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">查询处理篇：总论</span>
+                        <span class="hidden-mobile">分布式系统的 Debug</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     
@@ -416,8 +427,8 @@
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9ASorting/" title="查询处理篇：Sorting">
-                        <span class="hidden-mobile">查询处理篇：Sorting</span>
+                      <a href="/2022/07/22/PingCAP%20TinyKV%20%E6%80%BB%E7%BB%93/" title="PingCAP TinyKV 总结">
+                        <span class="hidden-mobile">PingCAP TinyKV 总结</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>

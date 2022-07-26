@@ -223,6 +223,76 @@
         
           <i class="index-pin  " title="Pin on top"></i>
         
+        <a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9AJoin%20%E6%93%8D%E4%BD%9C/" target="_self">
+          查询处理篇：Join 操作
+        </a>
+      </h1>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9AJoin%20%E6%93%8D%E4%BD%9C/" target="_self">
+        <div>
+          join 实际上是连接操作（concatenation），表 r 和 s 之间的 join 可以表示为 $r \bowtie_{\theta} s$，$\theta$ 表示连接的条件，有等于、大于、小于和自然连接几种，本文中不做区分，只讨论 join 操作的实现方式。 为了方便计算，考虑有 student 和 takes 两张表，需要执行它们的 join 操作，即 $student \bowtie
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2022-07-01 16:21" pubdate>
+              2022-07-01
+            </time>
+          </div>
+        
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h1 class="index-header">
+        
+          <i class="index-pin  " title="Pin on top"></i>
+        
+        <a href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9ASorting/" target="_self">
+          查询处理篇：Sorting
+        </a>
+      </h1>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/07/01/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9ASorting/" target="_self">
+        <div>
+          在数据库系统中会经常读取大量记录，如果这些记录有序的话，在一些场景中非常有用，比如：  query sql 语句指定输出有序。 一些 Join 算法的高效实现，见 查询处理篇：Join 操作。 向 B+ 树中插入大量的索引条目或高效地构造 B+ 树，见 索引篇二：B-plus Tree.  再区分下一些相关的概念。如果文件上面已经建立了索引，那么使用该索引也能实现顺序读取记录，但这样的顺序可能只是
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2022-07-01 16:20" pubdate>
+              2022-07-01
+            </time>
+          </div>
+        
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h1 class="index-header">
+        
+          <i class="index-pin  " title="Pin on top"></i>
+        
         <a href="/2022/06/30/%E7%B4%A2%E5%BC%95%E7%AF%87%E4%B8%89%EF%BC%9ALSM%20Tree/" target="_self">
           索引篇三：LSM Tree
         </a>
@@ -717,138 +787,6 @@
 
           </div>
         
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h1 class="index-header">
-        
-          <i class="index-pin  " title="Pin on top"></i>
-        
-        <a href="/2022/06/18/Percolator-%E9%9A%8F%E7%AC%94/" target="_self">
-          事务篇六：Percolator 随笔
-        </a>
-      </h1>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/06/18/Percolator-%E9%9A%8F%E7%AC%94/" target="_self">
-        <div>
-          前言Precolator 论文建议先阅读事务并发 snapshot isolation 部分: 事务篇三：事务的并发控制 precolator 这个系统是怎么产生的呢？论文中介绍了下背景，谷歌的爬虫应用会周期性的爬取新网页，同时更新网页的索引、排名等信息，这些更新操作往往并发，在庞大的数据之上做一些小的、独立的更改，而且修改跨越多个行、多个表。谷歌现有的系统中，MapReduce 也能完成相同的工
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2022-06-18 13:33" pubdate>
-              2022-06-18
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" class="category-chain-item">分布式</a>
-  
-  
-
-      </span>
-    
-  
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/">#分布式事务</a>
-            
-              <a href="/tags/%E4%BA%8B%E5%8A%A1/">#事务</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h1 class="index-header">
-        
-          <i class="index-pin  " title="Pin on top"></i>
-        
-        <a href="/2022/06/16/TinyKV-Snapshot-%E6%B5%81%E7%A8%8B/" target="_self">
-          TinyKV Snapshot 流程探秘
-        </a>
-      </h1>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/06/16/TinyKV-Snapshot-%E6%B5%81%E7%A8%8B/" target="_self">
-        <div>
-          前言在写 TinyKV 时，有一个部分很难理解，那就 Snapshot 的收发过程。为了防止内存中的日志条目无限扩张，Raft 会定时&#x2F;定量清理日志（如已经提交了的日志），一些节点可能由于是新加入或者网络等原因，其想要复制的日志已经被 leader 清理出内存了，此时，leader 会给该节点发送一份 Snapshot 使其快速跟上。在实现代码时，Raft 只是使用 Snapshot 的
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2022-06-16 18:56" pubdate>
-              2022-06-16
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" class="category-chain-item">分布式</a>
-  
-  
-
-      </span>
-    
-  
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/TinyKV/">#TinyKV</a>
-            
-          </div>
         
       </div>
     </article>

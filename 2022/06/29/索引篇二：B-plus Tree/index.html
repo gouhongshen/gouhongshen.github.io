@@ -31,7 +31,7 @@
 <meta property="og:image" content="http://example.com/img/B_plus_tree/6.jpg">
 <meta property="og:image" content="http://example.com/img/B_plus_tree/7.jpg">
 <meta property="article:published_time" content="2022-06-29T10:41:27.000Z">
-<meta property="article:modified_time" content="2022-07-16T01:56:43.176Z">
+<meta property="article:modified_time" content="2022-07-20T07:38:14.809Z">
 <meta property="article:author" content="gouhongshen">
 <meta property="article:tag" content="索引">
 <meta name="twitter:card" content="summary_large_image">
@@ -292,11 +292,11 @@
               
               <h2 id="B-Tree-的结构"><a href="#B-Tree-的结构" class="headerlink" title="B+ Tree 的结构"></a>B+ Tree 的结构</h2><p><img src="/img/B_plus_tree/1.jpg" srcset="/img/loading.gif" lazyload alt="图 1 B+ tree 节点结构"><br>如图 1 所示，B+ 树的每个节点包含 $n-1$ 个 search-key value，$K_1, K_2, …, K_{n-1}$，和 $n$ 个指针，$P_1, P_2, …, P_n$. 这些 search-key value 在节点中按序存储，即若 $i &lt; j$, 有 $K_i &lt; K_j$. 在实际中 search-key value 是可能存在重复的，<font color=red>目前只考虑不重复的情况，后面再介绍重复的情况</font>。</p>
 <p>B+ 树的节点分为三类，叶子节点（leaf node）、非叶子节点（non-leaf node），下面一个一个介绍。<br><img src="/img/B_plus_tree/2.jpg" srcset="/img/loading.gif" lazyload alt="图 2 叶子节点"></p>
-<p><strong>首先是叶子节点</strong>。如图 2，是一个 n &#x3D; 4 的叶子节点，search-key 为 instructor 表的 name 属性. 对于 $i&#x3D;1, 2, …, n-1$，指针 $P_i$ 指向存储在文件中的，search-key value 等于 $K_i$ 的记录，$P_n$ 指向右边相邻的同级节点或者为 null，如果右边不存在节点。</p>
+<p><strong>首先是叶子节点</strong>。如图 2，是一个 n &#x3D; 4 的叶子节点，search-key 为 instructor 表的 name 属性. 对于 $i&#x3D;1, 2, …, n-1$，指针 $P_i$ 指向存储在文件中的、search-key value 等于 $K_i$ 的记录，$P_n$ 指向右边相邻的同级节点或者为 null（如果右边不存在节点）</p>
 <p>每一个叶子节点<u>能够容纳的指针</u>的数量为 $[\lceil \frac{n}{2} \rceil,\ n]$，对于 n &#x3D; 4，其区间为 [2, 4]. </p>
 <p>对于两个叶子节点 $L_i, L_j$，若 $i &lt; j$，即 $L_i$ 在 $L_j$ 的左边，那么对于所有在 $L_i$ 中的 search-key value，都小于 $L_j$ 中的每一个 search-key value. </p>
 <p>B+ 树是一个多级索引结构，叶子节点常采用稠密索引，也就是说，出现在文件记录中的每一个 search-key value，也会出现在叶子节点中（一个指针对应一条记录）。<br><img src="/img/B_plus_tree/3.jpg" srcset="/img/loading.gif" lazyload alt="图 3"><br><strong>然后是非叶子节点</strong>，非叶子节点是对叶子节点建立的多级稀疏索引。非叶子节点和叶子节点的不同是，非叶子节点的指针指向的是树节点而非记录，而且非叶子节<u>能够容纳的指针</u>数量也是 $[\lceil \frac{n}{2} \rceil, n]$. </p>
-<p>在一个非叶子节点中，$P_i\ \ 1 &lt; i &lt; n$，指向一个子树，该子树包含的 search-key value 小于 $K_i$，但大于等于 $K_{i-1}$；指针 $P_1$ 指向包含小于 $K_1$ 的 search-key value 的子树；而 $P_n$ 指向其右边的相邻同级节点或者为 null，如果右边不存在节点。</p>
+<p>在一个非叶子节点中，$P_i\ \ 1 &lt; i &lt; n$，指向一个子树，该子树包含的 search-key value 小于 $K_i$，但大于等于 $K_{i-1}$；指针 $P_1$ 指向包含小于 $K_1$ 的 search-key value 的子树；而 $P_n$ 指向其右边的相邻同级节点或者为 null（如果右边不存在节点）。</p>
 <p>图 3 展示了一个在 instructor relation 文件上建立的完整 B+ 树，其中 n &#x3D; 4.</p>
 <p><u>B+ 树是一颗平衡多叉树，即从根节点到每个叶节点的路径长度总是一样的，正是如此，才提供了良好的增删改查性能，而且每个节点至少要半满</u>。</p>
 <p><font color=red>对于 search key value 存在重复的情况</font>，可以有如下的方式解决：</p>
@@ -318,7 +318,7 @@
 <p><strong>当要插入一条 search key value 为 $v$ 的记录时</strong>，搜索该 B+ 树，找到 $&lt;&#x3D; v$ 的最大的 search key value（或者最小的 $&gt;&#x3D; v$ 的 search key value），同样也就找到了待插入的 block（叶子节点）。<u>如果该 block 还有空间</u>，那么按 search key value 的顺序插入该记录（可能涉及到记录在 block 中的移动，参考数组的插入操作）。<u>如果没有空间</u>，执行分裂操作（split），将待插入纪录和原记录按照 search key value 顺序平均分成两部分，同时创建一个新的 block（叶子节点），将前一半放在原 block 中，后一半放入新 block中。还需要索引新 block，即放入一条记录 $(key, P_i)$ 到分裂 block 的父节点中，其中 $key$ 是新 block 中最小的 search key value，$P_i$ 则是指向新 block 的指针。很明显，这是一个递归操作，父节点的插入依然可能引起分裂。</p>
 <p><strong>当要删除一条记录时</strong>，同样需要定位记录的 search key value，然后删除该记录（如果存在多个相等的 search key value，需要遍历它们直到找到目标记录），删除后，需要移动后面的记录填补删除记录的空白。由于每个节点都需要满足半满，如果删除一条记录后，节点不满足该要求，就需要从兄弟节点借一些记录，如果两个兄弟都不够，就只能释放 block，合并兄弟，同样地，这些操作也会影响到父节点。</p>
 <p>B+ 树文件组织方式还能用于大文件，具体地，将大文件划分成多记录，再采用 B+ 树组织。</p>
-<h2 id="一些其他的内容"><a href="#一些其他的内容" class="headerlink" title="一些其他的内容"></a>一些其他的内容</h2><p><font color=dark-green>Secondary Indices And Record Relocation</font><br>假设在 instructor 表文件上建立了两个索引，$A_{idx}$ 建立在 dept_name 属性上的，$B_{idx}$ 建立 ID 上，很明显 $A_{idx}$ 是一个 secondary index，而 $B_{idx}$ 是 primary index。不妨假设 $B_{idx}$ 采用 B+ 树索引结构，$A_{idx}$ 采用何种索引结构都无所谓，但一个文件只能有一种索引结构能够改变记录的存储位置，所以 $A_{idx}$ 的索引项只能存储指向记录的指针。当 $B_{idx}$ 节点分裂时，会有部分的记录移动到新的磁盘位置，这时候，那些 secondary index 就需要更新（记录的位置变了，之前的指针也就失效了），包括 $A_{idx}$. 这样的索引结构可能很多，可能涉及很多的记录，那么就可能需要非常多次的磁盘读写。</p>
+<h2 id="一些其他的内容"><a href="#一些其他的内容" class="headerlink" title="一些其他的内容"></a>一些其他的内容</h2><p><font color=dark-green>Secondary Indices And Record Relocation</font><br>假设在 instructor 表文件上建立了两个索引，$A_{idx}$ 建立在 dept_name 属性上的，$B_{idx}$ 建立 ID 上，很明显 $A_{idx}$ 是一个 secondary index，而 $B_{idx}$ 是 primary index。不妨假设 $B_{idx}$ 采用 B+ 树文件组织方式，$A_{idx}$ 采用何种索引结构都无所谓，但一个文件只能有一种索引结构能够改变记录的存储位置，所以 $A_{idx}$ 的索引项只能存储指向记录的指针。当 $B_{idx}$ 节点分裂时，会有部分的记录移动到新的磁盘位置，这时候，那些 secondary index 就需要更新（记录的位置变了，之前的指针也就失效了），包括 $A_{idx}$. 这样的索引结构可能很多，可能涉及很多的记录，那么就可能需要非常多次的磁盘读写。</p>
 <p><font color=red>一个比较广泛的解决方法是</font>，在 secondary index 中，对于某个 search key value，不再存储指向对应记录的指针，而是存储 primary index 的 search key 在该记录中的值。当使用 secondary index 查找记录时，就需要两个步骤：</p>
 <ul>
 <li>先在 secondary index 中找到该记录对应的 primary index 的 search key value.</li>
