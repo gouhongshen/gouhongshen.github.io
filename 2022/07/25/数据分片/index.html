@@ -26,7 +26,7 @@
 <meta property="og:image" content="http://example.com/img/data_partitioning/1.jpg">
 <meta property="og:image" content="http://example.com/img/data_partitioning/2.jpg">
 <meta property="article:published_time" content="2022-07-25T02:04:26.000Z">
-<meta property="article:modified_time" content="2022-07-25T13:50:27.070Z">
+<meta property="article:modified_time" content="2022-07-28T11:29:43.055Z">
 <meta property="article:author" content="gouhongshen">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="http://example.com/img/data_partitioning/1.jpg">
@@ -305,11 +305,11 @@
 </blockquote>
 <p><font color=red>Hash Partitioning</font>. 该方法先确定分片需要的属性，然后将属性值映射到集合 $\{1,2,…,n\}$，然后将数据存储到对应的节点上。</p>
 <blockquote>
-<p>该方案可以说最适合单点查询了，如果查询请求中包含分配属性的值，那么映射后找到对应的节点，然后将请求路由过去就好了，其他不相干的节点就可以同时处理其他的请求。如果哈希函数选取得很好，能够将数据均匀的分配到 $n$ 个节点，那么扫描整个数据集的加速比也能接近 $n$. 该方式对范围查询不友好，需要扫描所有的节点获取想要的数据。</p>
+<p>该方案可以说最适合单点查询了，如果查询请求中包含分配属性的值，那么映射后找到对应的节点，然后将请求路由过去就好了，其他不相干的节点就可以同时处理其他的请求。如果哈希函数选取得很好，能够将数据均匀的分配到 $n$ 个节点，那么扫描整个数据集的加速比也能接近 $n$. <u>该方式对范围查询不友好</u>，需要扫描所有的节点获取想要的数据。</p>
 </blockquote>
 <p><font color=red>Range Partitioning</font>. 该方法先确定属性，然后将属性值划分为多个区间，处于不同区间的属性值存储在不同的节点上。</p>
 <blockquote>
-<p>先确定属性（设为 $A$），和一个分片向量（partitioning vector）$[v_1,v_2,…,v_{n-1}]$，然后按照这样的方式分片：考虑一条数据 $t,\ t[A] &#x3D; x$，如果 $x &lt; v_1$，则将 $t$ 存储在 $N_1$；如果 $x &gt;&#x3D; v_{n-1}$，则 $t$ 存储在 $N_n$；如果 $v_i &lt;&#x3D; t &lt; v_{i+1}$，则 $t$ 存储在 $N_{i+1}$，如下图：<br><img src="/img/data_partitioning/1.jpg" srcset="/img/loading.gif" lazyload><br>该方式对单点查询和范围查询都很友好。</p>
+<p>先确定属性（设为 $A$），和一个分片向量（partitioning vector）$[v_1,v_2,…,v_{n-1}]$，然后按照这样的方式分片：考虑一条数据 $t,\ t[A] &#x3D; x$，如果 $x &lt; v_1$，则将 $t$ 存储在 $N_1$；如果 $x &gt;&#x3D; v_{n-1}$，则 $t$ 存储在 $N_n$；如果 $v_i &lt;&#x3D; t &lt; v_{i+1}$，则 $t$ 存储在 $N_{i+1}$，如下图：<br><img src="/img/data_partitioning/1.jpg" srcset="/img/loading.gif" lazyload><br>该方式对单点查询和<u>范围查询都很友好</u>。</p>
 </blockquote>
 <h3 id="处理数据倾斜（skew）"><a href="#处理数据倾斜（skew）" class="headerlink" title="处理数据倾斜（skew）"></a>处理数据倾斜（skew）</h3><p>除了 Round-Robin 方法，任何一种数据分片方法都不能阻止数据倾斜的存在，<u>数据倾斜是指</u>：一些分片中具有非常多的数据，而另外一些分片中的数据量却很少，被称为 data distribution skew，一般是由如下原因产生的：</p>
 <ul>

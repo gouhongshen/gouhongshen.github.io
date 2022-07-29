@@ -27,7 +27,7 @@
 <meta property="og:image" content="http://example.com/img/query_processing_0/1.jpg">
 <meta property="og:image" content="http://example.com/img/query_processing_0/2.jpg">
 <meta property="article:published_time" content="2022-07-01T08:23:09.000Z">
-<meta property="article:modified_time" content="2022-07-16T01:59:50.143Z">
+<meta property="article:modified_time" content="2022-07-26T09:12:33.169Z">
 <meta property="article:author" content="gouhongshen">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="http://example.com/img/query_processing_0/0.jpg">
@@ -224,7 +224,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.2k 字
+          1.3k 字
         
       </span>
     
@@ -235,7 +235,7 @@
         
         
         
-          14 分钟
+          15 分钟
         
       </span>
     
@@ -297,6 +297,9 @@
 </br>
 
 <p><font color=red>并行&#x2F;分布式部分</font></p>
+<a href="/2022/07/26/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9AParallel%20Join/" title="查询处理篇：Parallel Join">查询处理篇：Parallel Join</a> </br>
+<a href="/2022/07/26/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86%E7%AF%87%EF%BC%9AParallel%20Sort/" title="查询处理篇：Parallel Sort">查询处理篇：Parallel Sort</a> </br>
+
 <h2 id="前置知识"><a href="#前置知识" class="headerlink" title="前置知识"></a>前置知识</h2><p><img src="/img/query_processing_0/0.jpg" srcset="/img/loading.gif" lazyload><br>如上图，执行一条 query 的步骤通常包括以下三步：</p>
 <ul>
 <li>parsing and translation：将 sql 语句翻译成关系代数（relational algebra）。</li>
@@ -309,7 +312,7 @@
 <li>衡量每个执行方案的代价，选择最优的一个作为最后方案</li>
 <li>执行方案。</li>
 </ol>
-<p>第 1、2 部分将在<strong>查询优化篇中（暂无）</strong>介绍，<u>本部分（查询处理篇）主要涉及 3 执行方案中的单个操作的执行和代价衡量</u>，参考下面例子：<br><img src="/img/query_processing_0/1.jpg" srcset="/img/loading.gif" lazyload></p>
+<p>第 1、2 部分将在<a href="/2022/07/26/%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%EF%BC%88Query%20Optimization%EF%BC%89/" title="查询优化（Query Optimization）">查询优化（Query Optimization）</a>介绍，<u>本部分（查询处理篇）主要涉及 3 执行方案中的单个操作的执行和代价衡量</u>，参考下面例子：<br><img src="/img/query_processing_0/1.jpg" srcset="/img/loading.gif" lazyload></p>
 <p>假设有一个 query 如上图，经过 parsing and translation 可以产生如下的代数表达式：</p>
 <p><img src="/img/query_processing_0/2.jpg" srcset="/img/loading.gif" lazyload></p>
 <p>其中 $\Pi,\ \sigma$ 分别表示投影（projection）和选择（selection）操作。有了表达式还不够，代数表达式包含多个操作，所以还需要告诉数据库系统应该如何执行这一系列操作，比如应该如何执行 $\sigma_{salary&lt; 7500}$ 这个操作，是顺序读取表文件还是采用索引，这个步骤称为注释（annotation）。一个代数表达式操作 + 注释被称为执行原语（evaluation primitive），如 $\sigma_{salary&lt; 7500}\ (use\ index\ 1)$，执行一条 query 所包含的一组执行原语就叫做执行方案（query-execution plan）.</p>
